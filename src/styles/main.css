@@ -285,6 +285,38 @@ body {
   margin-bottom: 16px;
 }
 
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.progress-bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4285F4, #34a853);
+  border-radius: 5px;
+  transition: width 0.5s ease;
+}
+
+.progress-bar-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: right;
+}
+
 .timesheet-title {
   font-size: 24px;
   font-weight: 700;

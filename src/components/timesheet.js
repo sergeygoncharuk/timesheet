@@ -98,6 +98,13 @@ function buildTimesheetHTML() {
       </button>
     </div>
 
+    <div class="progress-bar-container" id="progressBarContainer" style="display:none;">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+      <span class="progress-bar-label" id="progressBarLabel">0h / 24h</span>
+    </div>
+
     <div class="loading-indicator" id="loadingIndicator" style="display:none;">
       <div class="spinner"></div>
       <span>Loading from Airtable...</span>
@@ -204,6 +211,7 @@ export async function renderEntries() {
   if (entries.length === 0) {
     table.style.display = 'none';
     emptyState.style.display = 'block';
+    document.getElementById('progressBarContainer').style.display = 'none';
     return;
   }
 
@@ -266,6 +274,18 @@ export async function renderEntries() {
       <td colspan="3"></td>
     </tr>
   `;
+
+  // Update progress bar
+  const maxMinutes = 24 * 60;
+  const pct = Math.min((totalMinutes / maxMinutes) * 100, 100);
+  const progressContainer = document.getElementById('progressBarContainer');
+  const progressFill = document.getElementById('progressBarFill');
+  const progressLabel = document.getElementById('progressBarLabel');
+  progressContainer.style.display = 'flex';
+  progressFill.style.width = `${pct}%`;
+  const hrs = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
 
   // Bind click handlers
   tbody.querySelectorAll('.edit').forEach(btn => {
