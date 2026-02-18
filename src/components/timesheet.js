@@ -522,6 +522,31 @@ export async function handleFormSubmit(e) {
     return;
   }
 
+  // Check for overlapping entries
+  try {
+    const existingEntries = await getEntriesForVesselDate(currentVessel, currentDateStr);
+    const overlap = existingEntries.find(entry => {
+      // Skip the entry being edited
+      if (idVal && entry.id === idVal) return false;
+      // Two ranges overlap if one starts before the other ends
+      return startVal < entry.end && endVal > entry.start;
+    });
+
+    if (overlap) {
+      const overlapStart = overlap.start.substring(0, 2) + ':' + overlap.start.substring(2);
+      const overlapEnd = overlap.end.substring(0, 2) + ':' + overlap.end.substring(2);
+      [startInput, endInput].forEach(inp => {
+        inp.style.borderColor = '#e53e3e';
+        inp.style.boxShadow = '0 0 0 2px rgba(229, 62, 62, 0.2)';
+      });
+      showFieldError('startError', `Overlaps with ${overlapStart}–${overlapEnd}`);
+      showFieldError('endError', `Overlaps with ${overlapStart}–${overlapEnd}`);
+      return;
+    }
+  } catch (err) {
+    console.warn('Could not check overlaps:', err);
+  }
+
   const data = {
     vessel: currentVessel,
     date: currentDateStr,
