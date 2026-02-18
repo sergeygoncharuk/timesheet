@@ -315,14 +315,24 @@ function bindTimesheetEvents() {
   document.getElementById('addEntryBtn').addEventListener('click', openAddForm);
 }
 
-function showFormError(msg) {
-  const el = document.getElementById('formErrors');
-  if (el) el.textContent = msg;
+function showFieldError(fieldId, msg) {
+  const el = document.getElementById(fieldId);
+  if (el) {
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
 }
 
-function clearFormError() {
-  const el = document.getElementById('formErrors');
-  if (el) el.textContent = '';
+function clearFieldError(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (el) {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+
+function clearAllFieldErrors() {
+  ['startError', 'endError', 'activityError', 'tagError'].forEach(id => clearFieldError(id));
 }
 
 function checkTimeOrder() {
@@ -336,7 +346,8 @@ function checkTimeOrder() {
       inp.style.borderColor = '#e53e3e';
       inp.style.boxShadow = '0 0 0 2px rgba(229, 62, 62, 0.2)';
     });
-    showFormError('Start time must be earlier than End time.');
+    showFieldError('startError', 'Start must be earlier than End');
+    showFieldError('endError', 'End must be later than Start');
     return false;
   }
   return true;
@@ -346,14 +357,17 @@ function updateFormErrors() {
   const startVal = document.getElementById('entryStart').value.trim();
   const endVal = document.getElementById('entryEnd').value.trim();
 
+  // Clear time errors first
+  clearFieldError('startError');
+  clearFieldError('endError');
+
   if (startVal && !isValidHHMM(startVal)) {
-    showFormError('Invalid Start time. Use HHMM (HH: 00–23, MM: 00–59).');
+    showFieldError('startError', 'Invalid format. Use HHMM (00:00–23:59)');
   } else if (endVal && !isValidHHMM(endVal)) {
-    showFormError('Invalid End time. Use HHMM (HH: 00–23, MM: 00–59).');
+    showFieldError('endError', 'Invalid format. Use HHMM (00:00–23:59)');
   } else if (isValidHHMM(startVal) && isValidHHMM(endVal) && startVal >= endVal) {
-    showFormError('Start time must be earlier than End time.');
-  } else {
-    clearFormError();
+    showFieldError('startError', 'Start must be earlier than End');
+    showFieldError('endError', 'End must be later than Start');
   }
 }
 
@@ -420,7 +434,7 @@ async function openAddForm() {
   });
 
   attachFormValidationListeners();
-  clearFormError();
+  clearAllFieldErrors();
   updateSubmitButton(); // starts disabled
   openPanel();
 }
@@ -437,7 +451,7 @@ function openEditForm(id, entries) {
   document.getElementById('entryId').value = entry.id;
   document.getElementById('panelTitle').textContent = 'Edit item';
   attachFormValidationListeners();
-  clearFormError();
+  clearAllFieldErrors();
   updateSubmitButton();
   openPanel();
 }
@@ -464,15 +478,18 @@ export async function handleFormSubmit(e) {
   if (!startVal || !endVal || !activityVal || !tagVal) return;
 
   // Validate HHMM format
+  clearAllFieldErrors();
   const startOk = isValidHHMM(startVal);
   const endOk = isValidHHMM(endVal);
-  if (!startOk) validateTimeInput(startInput);
-  if (!endOk) validateTimeInput(endInput);
+  if (!startOk) {
+    validateTimeInput(startInput);
+    showFieldError('startError', 'Invalid format. Use HHMM (00:00–23:59)');
+  }
+  if (!endOk) {
+    validateTimeInput(endInput);
+    showFieldError('endError', 'Invalid format. Use HHMM (00:00–23:59)');
+  }
   if (!startOk || !endOk) {
-    const bad = [];
-    if (!startOk) bad.push('Start');
-    if (!endOk) bad.push('End');
-    showFormError(`Invalid time format for ${bad.join(' and ')}. Use HHMM (HH: 00–23, MM: 00–59).`);
     return;
   }
 
@@ -482,7 +499,8 @@ export async function handleFormSubmit(e) {
       inp.style.borderColor = '#e53e3e';
       inp.style.boxShadow = '0 0 0 2px rgba(229, 62, 62, 0.2)';
     });
-    showFormError('Start time must be earlier than End time.');
+    showFieldError('startError', 'Start must be earlier than End');
+    showFieldError('endError', 'End must be later than Start');
     return;
   }
 

@@ -542,6 +542,13 @@ body {
   margin-bottom: 20px;
 }
 
+.field-error {
+  color: #e53e3e;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: none;
+}
+
 .form-group label {
   display: block;
   font-size: 13px;
