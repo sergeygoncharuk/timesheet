@@ -28,10 +28,10 @@ function getConfig() {
         usersTableId: saved.usersTableId || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID || '',
         usersTableId: saved.usersTableId || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID || '',
         usersBaseId: saved.usersBaseId || import.meta.env.VITE_AIRTABLE_USERS_BASE_ID || '',
-        vesselsTableId: saved.vesselsTableId || '',
-        vesselsBaseId: saved.vesselsBaseId || '',
-        tagsTableId: saved.tagsTableId || '',
-        tagsBaseId: saved.tagsBaseId || '',
+        vesselsTableId: saved.vesselsTableId || import.meta.env.VITE_AIRTABLE_VESSELS_TABLE_ID || '',
+        vesselsBaseId: saved.vesselsBaseId || import.meta.env.VITE_AIRTABLE_VESSELS_BASE_ID || '',
+        tagsTableId: saved.tagsTableId || import.meta.env.VITE_AIRTABLE_TAGS_TABLE_ID || '',
+        tagsBaseId: saved.tagsBaseId || import.meta.env.VITE_AIRTABLE_TAGS_BASE_ID || '',
     };
 }
 
