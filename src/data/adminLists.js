@@ -4,7 +4,7 @@ const STORAGE_KEY = 'admin_lists';
 
 const DEFAULT_LISTS = {
     vessels: ['Aegir', 'Afina', 'Barla', 'Dian Dian', 'Ilker Deniz', 'Nimba-1', 'Nimba-2', 'Nimba-3', 'Nimba-4'],
-    users: [{ name: 'Sergey', email: '', role: 'Admin' }],
+    users: [{ name: 'Sergey', email: 'sg@lei-teng.com', role: 'Admin' }],
     tags: [
         { name: 'Cargo Ops', color: '#4299e1' },
         { name: 'Waiting', color: '#ed8936' },
@@ -26,6 +26,12 @@ function loadLists() {
             // Migration: Users
             if (parsed.users && parsed.users.length > 0 && typeof parsed.users[0] === 'string') {
                 parsed.users = parsed.users.map(u => ({ name: u, email: '', role: 'Vessel' }));
+            }
+            // Migration: Patch default admin email if blank
+            if (parsed.users) {
+                parsed.users = parsed.users.map(u =>
+                    (u.name === 'Sergey' && !u.email) ? { ...u, email: 'sg@lei-teng.com' } : u
+                );
             }
             // Migration: Tags
             if (parsed.tags && parsed.tags.length > 0 && typeof parsed.tags[0] === 'string') {
