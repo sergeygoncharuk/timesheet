@@ -765,13 +765,11 @@ function cancelEditVessel() {
 
 function loadAirtableForm() {
   const config = getAirtableConfig();
-  document.getElementById('airtableBaseId').value = config.baseId;
-  document.getElementById('airtableTableId').value = config.tableId;
-  document.getElementById('airtableUsersBaseId').value = config.usersBaseId || '';
+  document.getElementById('airtableApiKey').value = config.apiKey || '';
+  document.getElementById('airtableBaseId').value = config.baseId || '';
+  document.getElementById('airtableTableId').value = config.tableId || '';
   document.getElementById('airtableUsersTableId').value = config.usersTableId || '';
-  document.getElementById('airtableVesselsBaseId').value = config.vesselsBaseId || '';
   document.getElementById('airtableVesselsTableId').value = config.vesselsTableId || '';
-  document.getElementById('airtableTagsBaseId').value = config.tagsBaseId || '';
   document.getElementById('airtableTagsTableId').value = config.tagsTableId || '';
   document.getElementById('airtableStatus').textContent = '';
 }
@@ -779,15 +777,12 @@ function loadAirtableForm() {
 function bindAirtableEvents() {
   document.getElementById('airtableSaveBtn').addEventListener('click', () => {
     const config = {
-      // apiKey removed - using env var
-      baseId: document.getElementById('airtableBaseId').value.trim(),
-      tableId: document.getElementById('airtableTableId').value.trim(),
-      usersBaseId: document.getElementById('airtableUsersBaseId').value.trim(),
-      usersTableId: document.getElementById('airtableUsersTableId').value.trim(),
-      vesselsBaseId: document.getElementById('airtableVesselsBaseId').value.trim(),
+      apiKey:         document.getElementById('airtableApiKey').value.trim(),
+      baseId:         document.getElementById('airtableBaseId').value.trim(),
+      tableId:        document.getElementById('airtableTableId').value.trim(),
+      usersTableId:   document.getElementById('airtableUsersTableId').value.trim(),
       vesselsTableId: document.getElementById('airtableVesselsTableId').value.trim(),
-      tagsBaseId: document.getElementById('airtableTagsBaseId').value.trim(),
-      tagsTableId: document.getElementById('airtableTagsTableId').value.trim(),
+      tagsTableId:    document.getElementById('airtableTagsTableId').value.trim(),
     };
     saveAirtableConfig(config);
     const status = document.getElementById('airtableStatus');

@@ -56,178 +56,36 @@ function showLoginScreen() {
     const loginBtn = document.getElementById('loginBtn');
     const errorEl = document.getElementById('loginError');
 
-    // Initial State: Hide OTP and Login button
-    otpInput.style.display = 'none';
-    loginBtn.style.display = 'none';
-
-    // UI State: Step 1 (Email) vs Step 2 (OTP)
-    // Initially hide OTP input if we want a strict 2-step flow, 
-    // OR we can keep it simple: "Send Code" button next to "Login" button.
-    // Let's modify the UI structure slightly via JS or assume existing structure supports it.
-    // Existing: Email, OTP, Login Button.
-    // New Flow: 
-    // 1. Enter Email -> Click "Send Code". 
-    // 2. Button changes to "Sending...", then "Code Sent".
-    // 3. User enters OTP -> Click "Login".
-
-    // Let's inject a "Send Code" button if it doesn't exist
-    let sendCodeBtn = document.getElementById('sendCodeBtn');
-    if (!sendCodeBtn) {
-        sendCodeBtn = document.createElement('button');
-        sendCodeBtn.id = 'sendCodeBtn';
-        sendCodeBtn.className = 'btn btn-secondary';
-        sendCodeBtn.style.marginBottom = '10px';
-        sendCodeBtn.style.width = '100%';
-        sendCodeBtn.textContent = 'Get Login Code';
-        // Insert before OTP input
-        otpInput.parentNode.insertBefore(sendCodeBtn, otpInput);
-    }
-
-    // "Enter Code Manually" Link
-    let manualCodeBtn = document.getElementById('manualCodeBtn');
-    if (!manualCodeBtn) {
-        manualCodeBtn = document.createElement('a');
-        manualCodeBtn.id = 'manualCodeBtn';
-        manualCodeBtn.href = '#';
-        manualCodeBtn.textContent = 'I have a code';
-        manualCodeBtn.style.display = 'block';
-        manualCodeBtn.style.textAlign = 'center';
-        manualCodeBtn.style.fontSize = '12px';
-        manualCodeBtn.style.marginTop = '10px';
-        manualCodeBtn.style.color = '#718096';
-
-        // Insert after Login button
-        loginBtn.parentNode.insertBefore(manualCodeBtn, loginBtn.nextSibling);
-
-        manualCodeBtn.onclick = (e) => {
-            e.preventDefault();
-            // Show OTP input, hide Send button
-            const isManual = sendCodeBtn.style.display === 'none';
-            if (isManual) {
-                // Swith to "Send Code" mode (Initial state)
-                sendCodeBtn.style.display = 'block';
-                otpInput.style.display = 'none';
-                loginBtn.style.display = 'none';
-                manualCodeBtn.textContent = 'I have a code';
-            } else {
-                // Switch to "Enter Code" mode (Manual)
-                sendCodeBtn.style.display = 'none';
-                otpInput.style.display = 'block';
-                loginBtn.style.display = 'block';
-                manualCodeBtn.textContent = 'Go back to Send Code';
-                otpInput.focus();
-            }
-        };
-    }
-
-    // Event: Send Code
-    sendCodeBtn.onclick = async () => {
-        errorEl.style.display = 'none';
-        const email = emailInput.value.trim();
-        if (!email) {
-            showError('Please enter your email first.');
-            return;
-        }
-
-        sendCodeBtn.disabled = true;
-        sendCodeBtn.textContent = 'Sending...';
-
-        try {
-            const res = await fetch('/api/auth/send-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-
-            let data;
-            const contentType = res.headers.get('content-type');
-            if (contentType && contentType.indexOf('application/json') !== -1) {
-                data = await res.json();
-            } else {
-                const text = await res.text();
-                console.error('Non-JSON response from send-otp:', text.substring(0, 200));
-                throw new Error('Server error (non-JSON response). Check Vercel logs.');
-            }
-
-            if (!res.ok) throw new Error(data.error || 'Failed to send code');
-
-            sendCodeBtn.textContent = 'Code Sent! Check Email';
-            otpInput.style.display = 'block';
-            loginBtn.style.display = 'block';
-            otpInput.focus();
-
-            // Re-enable after delay to allow retry
-            setTimeout(() => {
-                sendCodeBtn.disabled = false;
-                sendCodeBtn.textContent = 'Get Login Code';
-            }, 30000);
-
-        } catch (e) {
-            console.error(e);
-            showError(e.message);
-            sendCodeBtn.disabled = false;
-            sendCodeBtn.textContent = 'Get Login Code';
-        }
-    };
-
     loginBtn.onclick = attemptLogin;
     otpInput.onkeydown = (e) => { if (e.key === 'Enter') attemptLogin(); };
 
-    async function attemptLogin() {
+    function attemptLogin() {
         errorEl.style.display = 'none';
         const email = emailInput.value.trim();
         const otp = otpInput.value.trim();
 
         if (!email || !otp) {
-            showError('Please enter email and OTP.');
+            errorEl.textContent = 'Please enter email and OTP.';
+            errorEl.style.display = 'block';
             return;
         }
 
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'Verifying...';
-
-        try {
-            const res = await fetch('/api/auth/verify-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp })
-            });
-
-            let data;
-            const contentType = res.headers.get('content-type');
-            if (contentType && contentType.indexOf('application/json') !== -1) {
-                data = await res.json();
-            } else {
-                const text = await res.text();
-                // console.error('Non-JSON response from verify-otp:', text);
-                // "Unexpected end of JSON input" usually means empty body or 500 HTML
-                throw new Error('Server error: Received non-JSON response. Ensure server function is deployed and Env Vars are set.');
-            }
-
-            if (!res.ok) throw new Error(data.error || 'Login failed');
-
-            // Success
-            sessionStorage.setItem(AUTH_KEY, JSON.stringify({
-                email: data.user.email,
-                name: data.user.name
-            }));
-
-            // Update local user store with fresh data from server
-            setCurrentUser(data.user);
-
-            bootApp();
-
-        } catch (e) {
-            console.error(e);
-            showError(e.message);
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Login';
+        const user = getUserByEmail(email);
+        if (!user) {
+            errorEl.textContent = 'User not found.';
+            errorEl.style.display = 'block';
+            return;
         }
-    }
 
-    function showError(msg) {
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
+        if (user.otp !== otp) {
+            errorEl.textContent = 'Invalid OTP code.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email: user.email, name: user.name }));
+        setCurrentUser(user);
+        bootApp();
     }
 }
 
