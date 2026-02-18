@@ -56,6 +56,10 @@ function showLoginScreen() {
     const loginBtn = document.getElementById('loginBtn');
     const errorEl = document.getElementById('loginError');
 
+    // Initial State: Hide OTP and Login button
+    otpInput.style.display = 'none';
+    loginBtn.style.display = 'none';
+
     // UI State: Step 1 (Email) vs Step 2 (OTP)
     // Initially hide OTP input if we want a strict 2-step flow, 
     // OR we can keep it simple: "Send Code" button next to "Login" button.
@@ -79,6 +83,43 @@ function showLoginScreen() {
         otpInput.parentNode.insertBefore(sendCodeBtn, otpInput);
     }
 
+    // "Enter Code Manually" Link
+    let manualCodeBtn = document.getElementById('manualCodeBtn');
+    if (!manualCodeBtn) {
+        manualCodeBtn = document.createElement('a');
+        manualCodeBtn.id = 'manualCodeBtn';
+        manualCodeBtn.href = '#';
+        manualCodeBtn.textContent = 'I have a code';
+        manualCodeBtn.style.display = 'block';
+        manualCodeBtn.style.textAlign = 'center';
+        manualCodeBtn.style.fontSize = '12px';
+        manualCodeBtn.style.marginTop = '10px';
+        manualCodeBtn.style.color = '#718096';
+
+        // Insert after Login button
+        loginBtn.parentNode.insertBefore(manualCodeBtn, loginBtn.nextSibling);
+
+        manualCodeBtn.onclick = (e) => {
+            e.preventDefault();
+            // Show OTP input, hide Send button
+            const isManual = sendCodeBtn.style.display === 'none';
+            if (isManual) {
+                // Swith to "Send Code" mode (Initial state)
+                sendCodeBtn.style.display = 'block';
+                otpInput.style.display = 'none';
+                loginBtn.style.display = 'none';
+                manualCodeBtn.textContent = 'I have a code';
+            } else {
+                // Switch to "Enter Code" mode (Manual)
+                sendCodeBtn.style.display = 'none';
+                otpInput.style.display = 'block';
+                loginBtn.style.display = 'block';
+                manualCodeBtn.textContent = 'Go back to Send Code';
+                otpInput.focus();
+            }
+        };
+    }
+
     // Event: Send Code
     sendCodeBtn.onclick = async () => {
         errorEl.style.display = 'none';
@@ -98,10 +139,21 @@ function showLoginScreen() {
                 body: JSON.stringify({ email })
             });
 
-            const data = await res.json();
+            let data;
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.indexOf('application/json') !== -1) {
+                data = await res.json();
+            } else {
+                const text = await res.text();
+                console.error('Non-JSON response from send-otp:', text.substring(0, 200));
+                throw new Error('Server error (non-JSON response). Check Vercel logs.');
+            }
+
             if (!res.ok) throw new Error(data.error || 'Failed to send code');
 
             sendCodeBtn.textContent = 'Code Sent! Check Email';
+            otpInput.style.display = 'block';
+            loginBtn.style.display = 'block';
             otpInput.focus();
 
             // Re-enable after delay to allow retry
@@ -141,7 +193,17 @@ function showLoginScreen() {
                 body: JSON.stringify({ email, otp })
             });
 
-            const data = await res.json();
+            let data;
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.indexOf('application/json') !== -1) {
+                data = await res.json();
+            } else {
+                const text = await res.text();
+                // console.error('Non-JSON response from verify-otp:', text);
+                // "Unexpected end of JSON input" usually means empty body or 500 HTML
+                throw new Error('Server error: Received non-JSON response. Ensure server function is deployed and Env Vars are set.');
+            }
+
             if (!res.ok) throw new Error(data.error || 'Login failed');
 
             // Success
