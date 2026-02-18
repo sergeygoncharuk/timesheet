@@ -307,14 +307,16 @@ export async function renderEntries() {
 }
 
 function bindTimesheetEvents() {
+  const container = document.getElementById('tab-timesheet');
+
   document.getElementById('vesselSelect').addEventListener('change', (e) => {
     currentVessel = e.target.value;
     renderEntries();
   });
 
-  document.querySelectorAll('.date-btn').forEach(btn => {
+  container.querySelectorAll('.date-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentDateOffset = parseInt(btn.dataset.offset);
       setDateOffset(currentDateOffset); // Save to shared store
@@ -332,8 +334,9 @@ export function refreshTimesheet() {
   currentDateOffset = getDateOffset();
   currentDateStr = getDateStr(currentDateOffset);
 
-  // Update UI
-  document.querySelectorAll('.date-btn').forEach(btn => {
+  // Update UI — scope to timesheet container to avoid affecting dashboard buttons
+  const container = document.getElementById('tab-timesheet');
+  container.querySelectorAll('.date-btn').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.offset) === currentDateOffset);
   });
   const titleEl = document.getElementById('timesheetTitle');
