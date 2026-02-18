@@ -4,7 +4,7 @@ import { initDashboard, refreshDashboard } from './components/dashboard.js';
 import { initWeather } from './components/weather.js';
 import { initTides } from './components/tides.js';
 import { initAdmin } from './components/admin.js';
-import { getUsers, isAuthRequired, getUserByEmail } from './data/adminLists.js';
+import { getUsers, isAuthRequired, getUserByEmail, syncUsers, syncVessels, syncTags } from './data/adminLists.js';
 import { getCurrentUser, setCurrentUser } from './data/store.js';
 
 const AUTH_KEY = 'lte_auth_session';
@@ -38,6 +38,11 @@ function bootApp() {
     initWeather();
     initTides();
     initAdmin();
+
+    // Auto-sync from Airtable in background
+    syncUsers().catch(e => console.warn('Auto-sync users failed:', e));
+    syncVessels().catch(e => console.warn('Auto-sync vessels failed:', e));
+    syncTags().catch(e => console.warn('Auto-sync tags failed:', e));
 
     // Tab navigation
     setupTabNavigation();

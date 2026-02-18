@@ -12,7 +12,6 @@ export function initAdmin() {
   container.innerHTML = buildAdminHTML();
   bindAdminEvents();
   bindAirtableEvents();
-  bindSyncButton();
   // Set correct initial form visibility for users tab
   document.getElementById('adminGenericAdd').style.display = 'none';
   document.getElementById('adminUserAdd').style.display = 'flex';
@@ -34,12 +33,6 @@ function buildAdminHTML() {
         <div class="admin-add-row" id="adminGenericAdd">
         <input type="text" id="adminNewItem" placeholder="Add new item..." maxlength="50" />
         <button class="btn btn-primary" id="adminAddBtn">+ Add</button>
-        <button class="btn btn-secondary" id="adminSyncVesselsBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Sync Vessels">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
-             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
-          </svg>
-          Sync
-        </button>
         <button class="btn btn-secondary" id="adminCancelBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -52,12 +45,6 @@ function buildAdminHTML() {
           <option value="Admin">Admin</option>
         </select>
         <button class="btn btn-primary" id="adminAddUserBtn">+ Add User</button>
-        <button class="btn btn-secondary" id="adminSyncUsersBtn" style="margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Fetch latest users from Airtable">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
-          </svg>
-          Sync
-        </button>
         <button class="btn btn-secondary" id="adminCancelUserBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -67,12 +54,6 @@ function buildAdminHTML() {
             <input type="text" id="newTagName" placeholder="Tag Name" class="admin-input" />
         </div>
         <button class="btn btn-primary" id="adminAddTagBtn">+ Add Tag</button>
-        <button class="btn btn-secondary" id="adminSyncTagsBtn" style="margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Sync Tags">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
-             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
-          </svg>
-          Sync
-        </button>
         <button class="btn btn-secondary" id="adminCancelTagBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -677,65 +658,6 @@ function cancelEditUser() {
 
   // Hide cancel
   document.getElementById('adminCancelUserBtn').style.display = 'none';
-}
-
-function bindSyncButton() {
-  const btn = document.getElementById('adminSyncUsersBtn');
-  if (!btn) return;
-
-  btn.addEventListener('click', async () => {
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = 'Syncing...';
-
-    await syncUsers();
-    renderList();
-    updateTabCounts();
-
-    btn.innerHTML = 'Done';
-    setTimeout(() => {
-      btn.innerHTML = originalText;
-      btn.disabled = false;
-    }, 1500);
-  });
-
-  const btnVessels = document.getElementById('adminSyncVesselsBtn');
-  if (btnVessels) {
-    btnVessels.addEventListener('click', async () => {
-      const originalText = btnVessels.innerHTML;
-      btnVessels.disabled = true;
-      btnVessels.innerHTML = 'Syncing...';
-
-      await syncVessels();
-      renderList();
-      updateTabCounts();
-
-      btnVessels.innerHTML = 'Done';
-      setTimeout(() => {
-        btnVessels.innerHTML = originalText;
-        btnVessels.disabled = false;
-      }, 1500);
-    });
-  }
-
-  const btnTags = document.getElementById('adminSyncTagsBtn');
-  if (btnTags) {
-    btnTags.addEventListener('click', async () => {
-      const originalText = btnTags.innerHTML;
-      btnTags.disabled = true;
-      btnTags.innerHTML = 'Syncing...';
-
-      await syncTags();
-      renderList();
-      updateTabCounts();
-
-      btnTags.innerHTML = 'Done';
-      setTimeout(() => {
-        btnTags.innerHTML = originalText;
-        btnTags.disabled = false;
-      }, 1500);
-    });
-  }
 }
 
 function startEditVessel(vesselName) {
