@@ -73,7 +73,6 @@ function buildTimesheetHTML() {
     <div class="control-section">
       <div class="control-label">
         Vessel
-        <span class="required-badge">Required</span>
       </div>
       <select class="vessel-select" id="vesselSelect"></select>
     </div>
@@ -81,7 +80,6 @@ function buildTimesheetHTML() {
     <div class="control-section">
       <div class="control-label">
         <span></span>
-        <span class="required-badge">Required</span>
       </div>
       <div class="date-buttons">
         <button class="date-btn ${currentDateOffset === -1 ? 'active' : ''}" data-offset="-1">Yesterday</button>
