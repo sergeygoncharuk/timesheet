@@ -40,12 +40,6 @@ function buildAdminHTML() {
           </svg>
           Sync
         </button>
-        <button class="btn btn-secondary" id="adminSyncTagsBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Sync Tags">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
-             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
-          </svg>
-          Sync
-        </button>
         <button class="btn btn-secondary" id="adminCancelBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -73,6 +67,12 @@ function buildAdminHTML() {
             <input type="text" id="newTagName" placeholder="Tag Name" class="admin-input" />
         </div>
         <button class="btn btn-primary" id="adminAddTagBtn">+ Add Tag</button>
+        <button class="btn btn-secondary" id="adminSyncTagsBtn" style="margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Sync Tags">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
+             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+          </svg>
+          Sync
+        </button>
         <button class="btn btn-secondary" id="adminCancelTagBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -395,10 +395,7 @@ function bindAdminEvents() {
         document.getElementById('adminTagAdd').style.display = 'none';
         // Show/Hide Sync Vessels button
         const syncVesselsBtn = document.getElementById('adminSyncVesselsBtn');
-        const syncTagsBtn = document.getElementById('adminSyncTagsBtn');
-
         syncVesselsBtn.style.display = (activeList === 'vessels') ? 'inline-block' : 'none';
-        syncTagsBtn.style.display = (activeList === 'tags') ? 'inline-block' : 'none';
       }
 
       if (!isAirtable) renderList();
