@@ -1,7 +1,7 @@
 // Admin Tab Component — Manage Vessels, Users, Tags
 import { getVessels, getUsers, getTags, addItem, removeItem, renameItem, addUser, removeUser, updateUser, addTag, removeTag, updateTag, moveItem } from '../data/adminLists.js';
 
-let activeList = 'vessels'; // 'vessels' | 'users' | 'tags'
+let activeList = 'users'; // 'users' | 'vessels' | 'tags'
 let editingUser = null;
 let editingTag = null;
 let editingVessel = null;
@@ -19,8 +19,8 @@ function buildAdminHTML() {
     <div class="admin-container">
       <h2 class="admin-title">Administration</h2>
       <div class="admin-tabs">
-        <button class="admin-tab active" data-list="vessels">Vessels</button>
-        <button class="admin-tab" data-list="users">Users</button>
+        <button class="admin-tab active" data-list="users">Users</button>
+        <button class="admin-tab" data-list="vessels">Vessels</button>
         <button class="admin-tab" data-list="tags">Tags</button>
       </div>
 
