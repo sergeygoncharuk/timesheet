@@ -140,7 +140,7 @@ function initUserSwitcher() {
                         <span class="user-role-badge ${currentUser.role.toLowerCase().replace(' ', '-')}">${currentUser.role}</span>
                     </div>
                 </div>
-                ${users.length > 1 ? `
+                ${currentUser.role && currentUser.role.toLowerCase() === 'admin' && users.length > 1 ? `
                 <div class="user-dropdown-divider"></div>
                 <div class="user-dropdown-section-label">Switch User</div>
                 ${users.filter(u => u.name !== currentUser.name).map(u => `
