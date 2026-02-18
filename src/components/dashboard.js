@@ -3,7 +3,7 @@ import { Chart, registerables } from 'chart.js';
 import { getVessels, getTags } from '../data/adminLists.js';
 import {
   getEntriesForVesselDate, calcDuration, formatDuration,
-  getDateStr, formatDateDisplay
+  getDateStr, formatDateDisplay, getDateOffset, setDateOffset
 } from '../data/store.js';
 
 Chart.register(...registerables);
@@ -15,6 +15,11 @@ let tagChart = null;
 
 export function initDashboard() {
   const container = document.getElementById('tab-dashboard');
+
+  // Sync date from store
+  dashDateOffset = getDateOffset();
+  dashDateStr = getDateStr(dashDateOffset);
+
   container.innerHTML = buildDashboardHTML();
   bindDashboardEvents();
   refreshDashboard();
@@ -68,6 +73,7 @@ function bindDashboardEvents() {
       document.querySelectorAll('.dash-date-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       dashDateOffset = parseInt(btn.dataset.offset);
+      setDateOffset(dashDateOffset); // Save to shared store
       dashDateStr = getDateStr(dashDateOffset);
       document.getElementById('dashDate').textContent = formatDashDate();
       renderDashboard();
@@ -166,6 +172,19 @@ function renderTagChart(tagMinutes) {
 }
 
 export function refreshDashboard() {
+  // Sync date from store
+  dashDateOffset = getDateOffset();
+  dashDateStr = getDateStr(dashDateOffset);
+
+  // Update UI headers/buttons
+  document.querySelectorAll('.dash-date-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.offset) === dashDateOffset);
+  });
+  const dateEl = document.getElementById('dashDate');
+  if (dateEl) {
+    dateEl.textContent = formatDashDate();
+  }
+
   // Re-populate vessel dropdown from admin lists
   const sel = document.getElementById('dashVesselSelect');
   if (sel) {

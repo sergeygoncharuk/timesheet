@@ -3,7 +3,8 @@ import { getVessels, getTags } from '../data/adminLists.js';
 import { getCurrentUser } from '../data/store.js';
 import {
   getEntriesForVesselDate, addEntry, updateEntry, deleteEntry,
-  calcDuration, formatDuration, formatTime, getDateStr, formatDateDisplay
+  calcDuration, formatDuration, formatTime, getDateStr, formatDateDisplay,
+  getDateOffset, setDateOffset
 } from '../data/store.js';
 
 let currentVessel = getVessels()[0];
@@ -62,6 +63,10 @@ function populateTagSelect() {
 
 export function initTimesheet() {
   const container = document.getElementById('tab-timesheet');
+  // Sync date from store
+  currentDateOffset = getDateOffset();
+  currentDateStr = getDateStr(currentDateOffset);
+
   container.innerHTML = buildTimesheetHTML();
   populateVesselSelect();
   bindTimesheetEvents();
@@ -312,6 +317,7 @@ function bindTimesheetEvents() {
       document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentDateOffset = parseInt(btn.dataset.offset);
+      setDateOffset(currentDateOffset); // Save to shared store
       currentDateStr = getDateStr(currentDateOffset);
       document.getElementById('timesheetTitle').textContent = `Timesheet on ${formatDateDisplay(currentDateStr)}`;
       renderEntries();
@@ -319,6 +325,23 @@ function bindTimesheetEvents() {
   });
 
   document.getElementById('addEntryBtn').addEventListener('click', openAddForm);
+}
+
+export function refreshTimesheet() {
+  // Sync state from store
+  currentDateOffset = getDateOffset();
+  currentDateStr = getDateStr(currentDateOffset);
+
+  // Update UI
+  document.querySelectorAll('.date-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.offset) === currentDateOffset);
+  });
+  const titleEl = document.getElementById('timesheetTitle');
+  if (titleEl) {
+    titleEl.textContent = `Timesheet on ${formatDateDisplay(currentDateStr)}`;
+  }
+
+  renderEntries();
 }
 
 function showFieldError(fieldId, msg) {

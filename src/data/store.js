@@ -37,28 +37,34 @@ function removeCacheEntry(id) {
 // Public API — async, Airtable-first
 // ============================================
 
-// User Session Management
-let currentUser = null;
+export const TAGS = [
+    { name: 'Mooring', color: '#cbd5e0' }, // gray-300
+    { name: 'Drifting', color: '#81e6d9' }, // teal-200
+    { name: 'Waiting', color: '#f6ad55' }, // orange-300
+    { name: 'Bunkering', color: '#9f7aea' }, // purple-400
+    { name: 'Transit', color: '#48bb78' }, // green-400
+    { name: 'Construct', color: '#f56565' }, // red-400
+    { name: 'Survey', color: '#4299e1' }, // blue-400
+    { name: 'Weather Delay', color: '#f56565' }, // red-400 (same as Construct/Safety)
+    { name: 'Maintenance', color: '#a0aec0' }, // gray-400
+    { name: 'Supply', color: '#ed8936' }, // orange-400
+    { name: 'Others', color: '#ecc94b' }  // yellow-400
+];
 
-export function getCurrentUser() {
-    if (!currentUser) {
-        const stored = localStorage.getItem('lte_current_user');
-        if (stored) {
-            currentUser = JSON.parse(stored);
-        } else {
-            // Default to first user from admin list if available
-            // This requires importing getUsers, but to avoid circular deps we'll handle it in init
-        }
-    }
-    return currentUser;
-}
+// Shared State
+let currentUser = { id: 'admin', name: 'Sergey (Admin)', role: 'admin' };
+let currentDateOffset = 0; // Shared date offset for Timesheet and Dashboard
 
+export function getCurrentUser() { return currentUser; }
 export function setCurrentUser(user) {
     currentUser = user;
     localStorage.setItem('lte_current_user', JSON.stringify(user));
     // Dispatch event for UI updates
     window.dispatchEvent(new CustomEvent('userChanged', { detail: user }));
 }
+
+export function getDateOffset() { return currentDateOffset; }
+export function setDateOffset(offset) { currentDateOffset = offset; }
 
 // Fetch entries for a vessel on a date (from Airtable, updates cache)
 export async function getEntriesForVesselDate(vessel, dateStr) {

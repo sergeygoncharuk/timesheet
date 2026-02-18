@@ -1,5 +1,5 @@
 // Main entry point
-import { initTimesheet, closePanel, handleFormSubmit, renderEntries } from './components/timesheet.js';
+import { initTimesheet, closePanel, handleFormSubmit, refreshTimesheet } from './components/timesheet.js';
 import { initDashboard, refreshDashboard } from './components/dashboard.js';
 import { initWeather } from './components/weather.js';
 import { initTides } from './components/tides.js';
@@ -78,7 +78,7 @@ function setupTabNavigation() {
                 refreshDashboard();
             }
             if (target === 'timesheet') {
-                renderEntries();
+                refreshTimesheet();
             }
         });
     });
