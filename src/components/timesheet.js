@@ -260,20 +260,8 @@ export async function renderEntries() {
     `;
   }).join('');
 
-  // Total duration row
+  // Total duration for progress bar
   const totalMinutes = entries.reduce((sum, e) => sum + calcDuration(e.start, e.end), 0);
-  let tfoot = table.querySelector('tfoot');
-  if (!tfoot) {
-    tfoot = document.createElement('tfoot');
-    table.querySelector('table').appendChild(tfoot);
-  }
-  tfoot.innerHTML = `
-    <tr style="font-weight:600;border-top:2px solid #cbd5e0;">
-      <td colspan="2" style="text-align:right;">Total</td>
-      <td>${formatDuration(totalMinutes)}</td>
-      <td colspan="3"></td>
-    </tr>
-  `;
 
   // Update progress bar
   const maxMinutes = 24 * 60;
