@@ -285,11 +285,7 @@ export async function renderEntries() {
   progressFill.style.width = `${pct}%`;
   const hrs = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
-  if (totalMinutes >= 1439) {
-    progressLabel.textContent = '24h';
-  } else {
-    progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
-  }
+  progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
 
   // Bind click handlers
   tbody.querySelectorAll('.edit').forEach(btn => {
