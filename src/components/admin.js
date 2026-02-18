@@ -108,9 +108,21 @@ function renderList() {
     listEl.querySelectorAll('.delete-user').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = btn.dataset.name;
-        if (confirm(`Delete user "${name}"?`)) {
+
+        if (btn.classList.contains('confirm-delete')) {
           removeUser(name);
           renderList();
+        } else {
+          btn.classList.add('confirm-delete');
+          const originalHTML = btn.innerHTML;
+          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Confirm</span>';
+
+          setTimeout(() => {
+            if (document.body.contains(btn)) {
+              btn.classList.remove('confirm-delete');
+              btn.innerHTML = originalHTML;
+            }
+          }, 3000);
         }
       });
     });
@@ -207,30 +219,28 @@ function renderList() {
 
     listEl.querySelectorAll('.delete').forEach(btn => {
       btn.addEventListener('click', () => {
-        removeItem(activeList, btn.dataset.value);
-        renderList();
+        const value = btn.dataset.value;
+
+        if (btn.classList.contains('confirm-delete')) {
+          removeItem(activeList, value);
+          renderList();
+        } else {
+          btn.classList.add('confirm-delete');
+          const originalHTML = btn.innerHTML;
+          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Confirm</span>';
+
+          setTimeout(() => {
+            if (document.body.contains(btn)) {
+              btn.classList.remove('confirm-delete');
+              btn.innerHTML = originalHTML;
+            }
+          }, 3000);
+        }
       });
     });
   }
 
-  // Bind edit/delete
-  listEl.querySelectorAll('.edit').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const oldVal = btn.dataset.value;
-      const newVal = prompt(`Rename "${oldVal}" to:`, oldVal);
-      if (newVal !== null && newVal.trim() && newVal.trim() !== oldVal) {
-        renameItem(activeList, oldVal, newVal.trim());
-        renderList();
-      }
-    });
-  });
 
-  listEl.querySelectorAll('.delete').forEach(btn => {
-    btn.addEventListener('click', () => {
-      removeItem(activeList, btn.dataset.value);
-      renderList();
-    });
-  });
 
   updateTabCounts();
 }
