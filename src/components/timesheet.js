@@ -226,16 +226,26 @@ export async function renderEntries() {
   // Sort by start time
   entries.sort((a, b) => a.start.localeCompare(b.start));
 
-  tbody.innerHTML = entries.map(entry => {
+  let rowsHTML = '';
+  entries.forEach((entry, i) => {
+    // Insert gap row if there's unlogged time between consecutive entries
+    if (i > 0) {
+      const prevEnd = entries[i - 1].end;
+      const currStart = entry.start;
+      if (prevEnd < currStart) {
+        const gapMin = calcDuration(prevEnd, currStart);
+        rowsHTML += `
+          <tr class="gap-row">
+            <td colspan="6">${formatTime(prevEnd)} — ${formatTime(currStart)} · ${formatDuration(gapMin)} gap</td>
+          </tr>`;
+      }
+    }
+
     const dur = calcDuration(entry.start, entry.end);
     const tagObj = allTags.find(t => t.name === entry.tag);
     const tagColor = tagObj ? tagObj.color : '#cbd5e0';
-    // Use a light version of the color for background, or just the color with opacity?
-    // Let's use the color as background and maybe white text if dark, or just use the color as is.
-    // The previous design used pastels. The new colors are somewhat bright.
-    // Let's use style="background-color: ${tagColor}; color: white;" for a solid badge.
 
-    return `
+    rowsHTML += `
       <tr>
         <td>${formatTime(entry.start)}</td>
         <td>${formatTime(entry.end)}</td>
@@ -261,9 +271,9 @@ export async function renderEntries() {
             </button>
           </div>
         </td>
-      </tr>
-    `;
-  }).join('');
+      </tr>`;
+  });
+  tbody.innerHTML = rowsHTML;
 
   // Total duration for progress bar
   const totalMinutes = entries.reduce((sum, e) => sum + calcDuration(e.start, e.end), 0);

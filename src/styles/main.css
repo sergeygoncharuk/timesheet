@@ -393,6 +393,21 @@ body {
   background: var(--primary-ultra-light);
 }
 
+.gap-row td {
+  text-align: center;
+  padding: 6px 20px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+  border-bottom: 1px dashed #e2e8f0;
+  background: #fafbfc;
+  pointer-events: none;
+}
+
+.entries-table tr.gap-row:hover td {
+  background: #fafbfc;
+}
+
 .entry-tag {
   display: inline-block;
   padding: 4px 12px;
