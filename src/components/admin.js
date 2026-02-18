@@ -368,9 +368,6 @@ function bindAdminEvents() {
         document.getElementById('adminGenericAdd').style.display = 'flex';
         document.getElementById('adminUserAdd').style.display = 'none';
         document.getElementById('adminTagAdd').style.display = 'none';
-        // Show/Hide Sync Vessels button
-        const syncVesselsBtn = document.getElementById('adminSyncVesselsBtn');
-        syncVesselsBtn.style.display = (activeList === 'vessels') ? 'inline-block' : 'none';
       }
 
       if (!isAirtable) renderList();

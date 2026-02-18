@@ -3,7 +3,8 @@ import { Chart, registerables } from 'chart.js';
 import { getVessels, getTags } from '../data/adminLists.js';
 import {
   getEntriesForVesselDate, calcDuration, formatDuration,
-  getDateStr, formatDateDisplay, getDateOffset, setDateOffset
+  getDateStr, formatDateDisplay, getDateOffset, setDateOffset,
+  getCurrentUser
 } from '../data/store.js';
 
 Chart.register(...registerables);
@@ -21,6 +22,7 @@ export function initDashboard() {
   dashDateStr = getDateStr(dashDateOffset);
 
   container.innerHTML = buildDashboardHTML();
+  populateVesselSelect();
   bindDashboardEvents();
   refreshDashboard();
 }
@@ -60,6 +62,47 @@ function buildDashboardHTML() {
 function formatDashDate() {
   const d = new Date(dashDateStr + 'T00:00:00');
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function populateVesselSelect() {
+  const sel = document.getElementById('dashVesselSelect');
+  if (!sel) return;
+  const vessels = getVessels();
+  const user = getCurrentUser();
+
+  // Clean up previous static label if any
+  const parent = sel.parentNode;
+  const existingLabel = parent.querySelector('.vessel-static-text');
+  if (existingLabel) existingLabel.remove();
+  sel.style.display = 'block';
+
+  if (user && user.role === 'Vessel') {
+    const userVessel = vessels.find(v => v === user.name);
+    if (userVessel) {
+      dashVessel = userVessel;
+      sel.innerHTML = `<option value="${userVessel}">${userVessel}</option>`;
+      sel.value = userVessel;
+      sel.style.display = 'none';
+
+      const staticText = document.createElement('div');
+      staticText.className = 'vessel-static-text';
+      staticText.textContent = userVessel;
+      staticText.style.fontWeight = '600';
+      staticText.style.padding = '8px 12px';
+      staticText.style.background = '#f7fafc';
+      staticText.style.borderRadius = '6px';
+      staticText.style.border = '1px solid #e2e8f0';
+      staticText.style.marginTop = '4px';
+      parent.appendChild(staticText);
+      return;
+    }
+  }
+
+  sel.innerHTML = vessels.map(v => `<option value="${v}" ${v === dashVessel ? 'selected' : ''}>${v}</option>`).join('');
+  if (!vessels.includes(dashVessel) && vessels.length > 0) {
+    dashVessel = vessels[0];
+    sel.value = dashVessel;
+  }
 }
 
 function bindDashboardEvents() {
@@ -185,15 +228,7 @@ export function refreshDashboard() {
     dateEl.textContent = formatDashDate();
   }
 
-  // Re-populate vessel dropdown from admin lists
-  const sel = document.getElementById('dashVesselSelect');
-  if (sel) {
-    const vessels = getVessels();
-    sel.innerHTML = vessels.map(v => `<option value="${v}" ${v === dashVessel ? 'selected' : ''}>${v}</option>`).join('');
-    if (!vessels.includes(dashVessel) && vessels.length > 0) {
-      dashVessel = vessels[0];
-      sel.value = dashVessel;
-    }
-  }
+  // Re-populate vessel dropdown from admin lists (respects Vessel role locking)
+  populateVesselSelect();
   renderDashboard();
 }
