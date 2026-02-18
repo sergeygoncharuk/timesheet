@@ -7,17 +7,54 @@
 //   Airtable "Description" <-> app "activity"
 //   Airtable "Tag"         <-> app "tag"
 
-// Keys are loaded from environment variables (see .env file)
-// In Vercel, set these in Project Settings → Environment Variables
-const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY || '';
-const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID || '';
-const AIRTABLE_TABLE_ID = import.meta.env.VITE_AIRTABLE_TABLE_ID || '';
-const API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`;
+// Keys are loaded from localStorage first, then environment variables as fallback.
+// In Vercel, set env vars in Project Settings → Environment Variables.
+const AIRTABLE_CONFIG_KEY = 'lte_airtable_config';
 
-const headers = {
-    'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-    'Content-Type': 'application/json'
-};
+function loadAirtableConfig() {
+    try {
+        const saved = localStorage.getItem(AIRTABLE_CONFIG_KEY);
+        if (saved) return JSON.parse(saved);
+    } catch (e) { /* ignore */ }
+    return {};
+}
+
+function getConfig() {
+    const saved = loadAirtableConfig();
+    return {
+        apiKey: saved.apiKey || import.meta.env.VITE_AIRTABLE_API_KEY || '',
+        baseId: saved.baseId || import.meta.env.VITE_AIRTABLE_BASE_ID || '',
+        tableId: saved.tableId || import.meta.env.VITE_AIRTABLE_TABLE_ID || '',
+        usersTableId: saved.usersTableId || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID || '',
+        usersTableId: saved.usersTableId || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID || '',
+        usersBaseId: saved.usersBaseId || import.meta.env.VITE_AIRTABLE_USERS_BASE_ID || '',
+        vesselsTableId: saved.vesselsTableId || '',
+        vesselsBaseId: saved.vesselsBaseId || '',
+        tagsTableId: saved.tagsTableId || '',
+        tagsBaseId: saved.tagsBaseId || '',
+    };
+}
+
+export function getAirtableConfig() {
+    return getConfig();
+}
+
+export function saveAirtableConfig(config) {
+    localStorage.setItem(AIRTABLE_CONFIG_KEY, JSON.stringify(config));
+}
+
+function getApiUrl() {
+    const c = getConfig();
+    return `https://api.airtable.com/v0/${c.baseId}/${c.tableId}`;
+}
+
+function getHeaders() {
+    const c = getConfig();
+    return {
+        'Authorization': `Bearer ${c.apiKey}`,
+        'Content-Type': 'application/json'
+    };
+}
 
 // Convert app entry -> Airtable fields
 function toAirtableFields(entry) {
@@ -54,8 +91,8 @@ export async function fetchAllRecords() {
     let offset = null;
 
     do {
-        const url = offset ? `${API_URL}?offset=${offset}` : API_URL;
-        const res = await fetch(url, { headers });
+        const url = offset ? `${getApiUrl()}?offset=${offset}` : getApiUrl();
+        const res = await fetch(url, { headers: getHeaders() });
         if (!res.ok) {
             const err = await res.json();
             console.error('Airtable fetch error:', err);
@@ -77,9 +114,9 @@ export async function fetchRecordsForVesselDate(vessel, dateStr) {
     let offset = null;
 
     do {
-        let url = `${API_URL}?filterByFormula=${encodeURIComponent(filterFormula)}`;
+        let url = `${getApiUrl()}?filterByFormula=${encodeURIComponent(filterFormula)}`;
         if (offset) url += `&offset=${offset}`;
-        const res = await fetch(url, { headers });
+        const res = await fetch(url, { headers: getHeaders() });
         if (!res.ok) {
             const err = await res.json();
             console.error('Airtable fetch error:', err);
@@ -96,9 +133,9 @@ export async function fetchRecordsForVesselDate(vessel, dateStr) {
 
 // Create a new record
 export async function createRecord(entry) {
-    const res = await fetch(API_URL, {
+    const res = await fetch(getApiUrl(), {
         method: 'POST',
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify({ fields: toAirtableFields(entry), typecast: true })
     });
     if (!res.ok) {
@@ -112,9 +149,9 @@ export async function createRecord(entry) {
 
 // Update an existing record
 export async function updateRecord(recordId, updates) {
-    const res = await fetch(`${API_URL}/${recordId}`, {
+    const res = await fetch(`${getApiUrl()}/${recordId}`, {
         method: 'PATCH',
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify({ fields: toAirtableFields(updates), typecast: true })
     });
     if (!res.ok) {
@@ -128,14 +165,248 @@ export async function updateRecord(recordId, updates) {
 
 // Delete a record
 export async function deleteRecord(recordId) {
-    const res = await fetch(`${API_URL}/${recordId}`, {
+    const res = await fetch(`${getApiUrl()}/${recordId}`, {
         method: 'DELETE',
-        headers
+        headers: getHeaders()
     });
     if (!res.ok) {
         const err = await res.json();
         console.error('Airtable delete error:', err);
         throw new Error(err.error?.message || 'Failed to delete from Airtable');
+    }
+    return true;
+}
+
+// --- Users Table ---
+
+function getUsersTableUrl() {
+    const c = getConfig();
+    if (!c.usersTableId) throw new Error('Users Table ID is not configured');
+    return `https://api.airtable.com/v0/${c.usersBaseId || c.baseId}/${c.usersTableId}`;
+}
+
+// Fetch all users from the Airtable Users table
+export async function fetchUsersFromAirtable() {
+    let allRecords = [];
+    let offset = null;
+
+    do {
+        const url = offset ? `${getUsersTableUrl()}?offset=${offset}` : getUsersTableUrl();
+        const res = await fetch(url, { headers: getHeaders() });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error?.message || 'Failed to fetch users from Airtable');
+        }
+        const data = await res.json();
+        allRecords = allRecords.concat(data.records.map(r => ({
+            airtableId: r.id,
+            name: r.fields.Name || '',
+            email: r.fields.Email || '',
+            role: r.fields.Role || 'Vessel',
+            otp: r.fields.OTP || '',
+            sortId: r.fields.ID || 0
+        })));
+        offset = data.offset || null;
+    } while (offset);
+
+    return allRecords;
+}
+
+// Push a user to the Airtable Users table
+export async function pushUserToAirtable(user) {
+    const res = await fetch(getUsersTableUrl(), {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            fields: { Name: user.name, Email: user.email || '', Role: user.role || 'Vessel', OTP: user.otp || '' },
+            typecast: true
+        })
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to push user to Airtable');
+    }
+    return await res.json();
+}
+
+export async function updateUserInAirtable(recordId, updates) {
+    const res = await fetch(`${getUsersTableUrl()}/${recordId}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            fields: {
+                Name: updates.name,
+                Email: updates.email,
+                Role: updates.role,
+                OTP: updates.otp
+            },
+            typecast: true
+        })
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to update user in Airtable');
+    }
+    return await res.json();
+}
+
+export async function deleteUserFromAirtable(recordId) {
+    const res = await fetch(`${getUsersTableUrl()}/${recordId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to delete user from Airtable');
+    }
+    return true;
+}
+
+// --- Vessels Table ---
+
+function getVesselsTableUrl() {
+    const c = getConfig();
+    if (!c.vesselsTableId) throw new Error('Vessels Table ID is not configured');
+    return `https://api.airtable.com/v0/${c.vesselsBaseId || c.baseId}/${c.vesselsTableId}`;
+}
+
+export async function fetchVesselsFromAirtable() {
+    let allRecords = [];
+    let offset = null;
+
+    do {
+        const url = offset ? `${getVesselsTableUrl()}?offset=${offset}` : getVesselsTableUrl();
+        const res = await fetch(url, { headers: getHeaders() });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error?.message || 'Failed to fetch vessels from Airtable');
+        }
+        const data = await res.json();
+        allRecords = allRecords.concat(data.records.map(r => ({
+            airtableId: r.id,
+            name: r.fields.Name || ''
+        })));
+        offset = data.offset || null;
+    } while (offset);
+
+    return allRecords;
+}
+
+export async function pushVesselToAirtable(vesselName) {
+    const res = await fetch(getVesselsTableUrl(), {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            fields: { Name: vesselName },
+            typecast: true
+        })
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to push vessel to Airtable');
+    }
+    return await res.json();
+}
+
+export async function updateVesselInAirtable(recordId, vesselName) {
+    const res = await fetch(`${getVesselsTableUrl()}/${recordId}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            fields: { Name: vesselName },
+            typecast: true
+        })
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to update vessel in Airtable');
+    }
+    return await res.json();
+}
+
+export async function deleteVesselFromAirtable(recordId) {
+    const res = await fetch(`${getVesselsTableUrl()}/${recordId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to delete vessel from Airtable');
+    }
+    return true;
+}
+
+// --- Tags Table ---
+
+function getTagsTableUrl() {
+    const c = getConfig();
+    if (!c.tagsTableId) throw new Error('Tags Table ID is not configured');
+    return `https://api.airtable.com/v0/${c.tagsBaseId || c.baseId}/${c.tagsTableId}`;
+}
+
+export async function fetchTagsFromAirtable() {
+    let allRecords = [];
+    let offset = null;
+
+    do {
+        const url = offset ? `${getTagsTableUrl()}?offset=${offset}` : getTagsTableUrl();
+        const res = await fetch(url, { headers: getHeaders() });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error?.message || 'Failed to fetch tags from Airtable');
+        }
+        const data = await res.json();
+        allRecords = allRecords.concat(data.records.map(r => ({
+            airtableId: r.id,
+            name: r.fields.Name || '',
+            color: r.fields.Color || '#cbd5e0'
+        })));
+        offset = data.offset || null;
+    } while (offset);
+
+    return allRecords;
+}
+
+export async function pushTagToAirtable(tag) {
+    const res = await fetch(getTagsTableUrl(), {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            fields: { Name: tag.name, Color: tag.color },
+            typecast: true
+        })
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to push tag to Airtable');
+    }
+    return await res.json();
+}
+
+export async function updateTagInAirtable(recordId, tag) {
+    const res = await fetch(`${getTagsTableUrl()}/${recordId}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            fields: { Name: tag.name, Color: tag.color },
+            typecast: true
+        })
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to update tag in Airtable');
+    }
+    return await res.json();
+}
+
+export async function deleteTagFromAirtable(recordId) {
+    const res = await fetch(`${getTagsTableUrl()}/${recordId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to delete tag from Airtable');
     }
     return true;
 }

@@ -246,7 +246,7 @@ export async function renderEntries() {
     const tagColor = tagObj ? tagObj.color : '#cbd5e0';
 
     rowsHTML += `
-      <tr>
+      <tr class="entry-row" data-id="${entry.id}" style="cursor: pointer;">
         <td>${formatTime(entry.start)}</td>
         <td>${formatTime(entry.end)}</td>
         <td>${formatDuration(dur)}</td>
@@ -290,9 +290,11 @@ export async function renderEntries() {
   const mins = totalMinutes % 60;
   progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
 
-  // Bind click handlers
-  tbody.querySelectorAll('.edit').forEach(btn => {
-    btn.addEventListener('click', () => openEditForm(btn.dataset.id, entries));
+  // Double-click to edit
+  tbody.querySelectorAll('.entry-row').forEach(row => {
+    row.addEventListener('dblclick', () => {
+      openEditForm(row.dataset.id, entries);
+    });
   });
   tbody.querySelectorAll('.delete').forEach(btn => {
     btn.addEventListener('click', async () => {

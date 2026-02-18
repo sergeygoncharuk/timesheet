@@ -1,5 +1,6 @@
 // Admin Tab Component — Manage Vessels, Users, Tags
-import { getVessels, getUsers, getTags, addItem, removeItem, renameItem, addUser, removeUser, updateUser, addTag, removeTag, updateTag, moveItem } from '../data/adminLists.js';
+import { getVessels, getUsers, getTags, addItem, removeItem, renameItem, addUser, removeUser, updateUser, addTag, removeTag, updateTag, moveItem, generateOtp, clearOtp, syncUsers, syncVessels, syncTags } from '../data/adminLists.js';
+import { getAirtableConfig, saveAirtableConfig, fetchUsersFromAirtable, pushUserToAirtable } from '../data/airtable.js';
 
 let activeList = 'users'; // 'users' | 'vessels' | 'tags'
 let editingUser = null;
@@ -10,6 +11,11 @@ export function initAdmin() {
   const container = document.getElementById('tab-admin');
   container.innerHTML = buildAdminHTML();
   bindAdminEvents();
+  bindAirtableEvents();
+  bindSyncButton();
+  // Set correct initial form visibility for users tab
+  document.getElementById('adminGenericAdd').style.display = 'none';
+  document.getElementById('adminUserAdd').style.display = 'flex';
   renderList();
   bindDragEvents();
 }
@@ -22,11 +28,24 @@ function buildAdminHTML() {
         <button class="admin-tab active" data-list="users">Users</button>
         <button class="admin-tab" data-list="vessels">Vessels</button>
         <button class="admin-tab" data-list="tags">Tags</button>
+        <button class="admin-tab" data-list="airtable">Airtable</button>
       </div>
 
-      <div class="admin-add-row" id="adminGenericAdd">
+        <div class="admin-add-row" id="adminGenericAdd">
         <input type="text" id="adminNewItem" placeholder="Add new item..." maxlength="50" />
         <button class="btn btn-primary" id="adminAddBtn">+ Add</button>
+        <button class="btn btn-secondary" id="adminSyncVesselsBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Sync Vessels">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
+             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+          </svg>
+          Sync
+        </button>
+        <button class="btn btn-secondary" id="adminSyncTagsBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Sync Tags">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
+             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+          </svg>
+          Sync
+        </button>
         <button class="btn btn-secondary" id="adminCancelBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -39,6 +58,12 @@ function buildAdminHTML() {
           <option value="Admin">Admin</option>
         </select>
         <button class="btn btn-primary" id="adminAddUserBtn">+ Add User</button>
+        <button class="btn btn-secondary" id="adminSyncUsersBtn" style="margin-left: 5px; background: #e2e8f0; color: #4a5568;" title="Fetch latest users from Airtable">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+          </svg>
+          Sync
+        </button>
         <button class="btn btn-secondary" id="adminCancelUserBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
       </div>
 
@@ -49,6 +74,52 @@ function buildAdminHTML() {
         </div>
         <button class="btn btn-primary" id="adminAddTagBtn">+ Add Tag</button>
         <button class="btn btn-secondary" id="adminCancelTagBtn" style="display:none; margin-left: 5px; background: #e2e8f0; color: #4a5568;">Cancel</button>
+      </div>
+
+      <div class="admin-airtable-config" id="adminAirtableConfig" style="display:none;">
+
+        <div class="form-group">
+          <label>Base ID</label>
+          <input type="text" id="airtableBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="airtableTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+        
+        <div style="margin-top: 15px; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: var(--text);">Users Connection (Optional)</div>
+        <div class="form-group">
+          <label>Users Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(Leave empty to use main Base ID)</span></label>
+          <input type="text" id="airtableUsersBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+        <div class="form-group">
+          <label>Users Table ID</label>
+          <input type="text" id="airtableUsersTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+
+        <div style="margin-top: 15px; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: var(--text);">Vessels Connection (Optional)</div>
+        <div class="form-group">
+          <label>Vessels Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(Leave empty to use main Base ID)</span></label>
+          <input type="text" id="airtableVesselsBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+        <div class="form-group">
+          <label>Vessels Table ID</label>
+          <input type="text" id="airtableVesselsTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+
+        <div style="margin-top: 15px; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: var(--text);">Tags Connection (Optional)</div>
+        <div class="form-group">
+          <label>Tags Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(Leave empty to use main Base ID)</span></label>
+          <input type="text" id="airtableTagsBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+        <div class="form-group">
+          <label>Tags Table ID</label>
+          <input type="text" id="airtableTagsTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+        </div>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button class="btn btn-primary" id="airtableSaveBtn">Save</button>
+          <button class="btn btn-secondary" id="airtableTestBtn" style="background:#e2e8f0; color:#4a5568;">Test Connection</button>
+        </div>
+        <div id="airtableStatus" style="margin-top:12px; font-size:13px;"></div>
       </div>
 
       <div class="admin-list" id="adminList"></div>
@@ -89,6 +160,13 @@ function renderList() {
             <span class="user-email">${u.email || 'No email'}</span>
           </div>
           <div class="admin-item-actions">
+            ${u.otp
+        ? `<span class="otp-code" data-name="${u.name}" title="Click to copy">${u.otp}</span>
+                 <button class="admin-action-btn reset-otp" data-name="${u.name}" title="Reset OTP" style="color:#e53e3e;">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                 </button>`
+        : `<button class="admin-action-btn gen-otp" data-name="${u.name}" title="Generate OTP" style="font-size:11px; font-weight:600; white-space:nowrap;">OTP</button>`
+      }
             <button class="admin-action-btn edit-user" data-name="${u.name}" title="Edit">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -132,6 +210,31 @@ function renderList() {
         const name = btn.dataset.name;
         const user = items.find(u => u.name === name);
         startEditUser(user);
+      });
+    });
+
+    listEl.querySelectorAll('.gen-otp').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const originalText = btn.textContent;
+        btn.textContent = '...';
+        await generateOtp(btn.dataset.name);
+        renderList();
+      });
+    });
+
+    listEl.querySelectorAll('.reset-otp').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await clearOtp(btn.dataset.name);
+        renderList();
+      });
+    });
+
+    listEl.querySelectorAll('.otp-code').forEach(el => {
+      el.addEventListener('click', () => {
+        navigator.clipboard.writeText(el.textContent.trim());
+        const orig = el.textContent;
+        el.textContent = 'Copied!';
+        setTimeout(() => { el.textContent = orig; }, 1500);
       });
     });
 
@@ -268,8 +371,17 @@ function bindAdminEvents() {
       tab.classList.add('active');
       activeList = tab.dataset.list;
       document.getElementById('adminNewItem').value = '';
-      // Toggle add forms
-      if (activeList === 'users') {
+      // Toggle add forms and panels
+      const isAirtable = activeList === 'airtable';
+      document.getElementById('adminAirtableConfig').style.display = isAirtable ? 'block' : 'none';
+      document.getElementById('adminList').style.display = isAirtable ? 'none' : 'block';
+
+      if (isAirtable) {
+        document.getElementById('adminGenericAdd').style.display = 'none';
+        document.getElementById('adminUserAdd').style.display = 'none';
+        document.getElementById('adminTagAdd').style.display = 'none';
+        loadAirtableForm();
+      } else if (activeList === 'users') {
         document.getElementById('adminGenericAdd').style.display = 'none';
         document.getElementById('adminUserAdd').style.display = 'flex';
         document.getElementById('adminTagAdd').style.display = 'none';
@@ -281,9 +393,15 @@ function bindAdminEvents() {
         document.getElementById('adminGenericAdd').style.display = 'flex';
         document.getElementById('adminUserAdd').style.display = 'none';
         document.getElementById('adminTagAdd').style.display = 'none';
+        // Show/Hide Sync Vessels button
+        const syncVesselsBtn = document.getElementById('adminSyncVesselsBtn');
+        const syncTagsBtn = document.getElementById('adminSyncTagsBtn');
+
+        syncVesselsBtn.style.display = (activeList === 'vessels') ? 'inline-block' : 'none';
+        syncTagsBtn.style.display = (activeList === 'tags') ? 'inline-block' : 'none';
       }
 
-      renderList();
+      if (!isAirtable) renderList();
     });
   });
 
@@ -485,25 +603,8 @@ function bindDragEvents() {
     const pos = target.dataset.dropPos;
     // If dropping after, and target is after source, index doesn't change?
     // Move logic: move item FROM to TO.
-    // If we drop BEFORE target, new index is target index.
-    // If we drop AFTER target, new index is target index.
-    // BUT splicing logic affects indices.
-
-    // Better logic:
-    // If pos is 'after', we want to insert at toIndex + 1.
-    // But if fromIndex < toIndex, moving to toIndex puts it at toIndex.
-
-    if (pos === 'after') {
-      toIndex = toIndex;
-    } else {
-      // before
-      toIndex = toIndex;
-      // If moving down (from < to), we need to adjust? 
-      // No, let's look at moveItem: lists.splice(to, 0, item).
-      // If we want it BEFORE target (index 5), we insert at 5. Item at 5 becomes 6.
-      // If we want it AFTER target (index 5), we insert at 6.
-    }
-
+    // If we want it BEFORE target (index 5), we insert at 5. Item at 5 becomes 6.
+    // If we want it AFTER target (index 5), we insert at 6.
     if (pos === 'after') toIndex++;
 
     // Correction for removing item first:
@@ -550,6 +651,12 @@ function cancelEditTag() {
 
 function startEditUser(user) {
   editingUser = user;
+
+  // Ensure user form is visible
+  document.getElementById('adminGenericAdd').style.display = 'none';
+  document.getElementById('adminUserAdd').style.display = 'flex';
+  document.getElementById('adminTagAdd').style.display = 'none';
+
   document.getElementById('newUserName').value = user.name;
   document.getElementById('newUserEmail').value = user.email || '';
   document.getElementById('newUserRole').value = user.role;
@@ -557,7 +664,7 @@ function startEditUser(user) {
   // Switch button to Update
   const btn = document.getElementById('adminAddUserBtn');
   btn.textContent = 'Update User';
-  btn.classList.add('btn-warning'); // Optional: change color to indicate edit
+  btn.classList.add('btn-warning');
 
   // Show cancel
   document.getElementById('adminCancelUserBtn').style.display = 'inline-block';
@@ -579,6 +686,65 @@ function cancelEditUser() {
 
   // Hide cancel
   document.getElementById('adminCancelUserBtn').style.display = 'none';
+}
+
+function bindSyncButton() {
+  const btn = document.getElementById('adminSyncUsersBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Syncing...';
+
+    await syncUsers();
+    renderList();
+    updateTabCounts();
+
+    btn.innerHTML = 'Done';
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }, 1500);
+  });
+
+  const btnVessels = document.getElementById('adminSyncVesselsBtn');
+  if (btnVessels) {
+    btnVessels.addEventListener('click', async () => {
+      const originalText = btnVessels.innerHTML;
+      btnVessels.disabled = true;
+      btnVessels.innerHTML = 'Syncing...';
+
+      await syncVessels();
+      renderList();
+      updateTabCounts();
+
+      btnVessels.innerHTML = 'Done';
+      setTimeout(() => {
+        btnVessels.innerHTML = originalText;
+        btnVessels.disabled = false;
+      }, 1500);
+    });
+  }
+
+  const btnTags = document.getElementById('adminSyncTagsBtn');
+  if (btnTags) {
+    btnTags.addEventListener('click', async () => {
+      const originalText = btnTags.innerHTML;
+      btnTags.disabled = true;
+      btnTags.innerHTML = 'Syncing...';
+
+      await syncTags();
+      renderList();
+      updateTabCounts();
+
+      btnTags.innerHTML = 'Done';
+      setTimeout(() => {
+        btnTags.innerHTML = originalText;
+        btnTags.disabled = false;
+      }, 1500);
+    });
+  }
 }
 
 function startEditVessel(vesselName) {
@@ -604,4 +770,77 @@ function cancelEditVessel() {
   btn.classList.remove('btn-warning');
 
   document.getElementById('adminCancelBtn').style.display = 'none';
+}
+
+function loadAirtableForm() {
+  const config = getAirtableConfig();
+  document.getElementById('airtableBaseId').value = config.baseId;
+  document.getElementById('airtableTableId').value = config.tableId;
+  document.getElementById('airtableUsersBaseId').value = config.usersBaseId || '';
+  document.getElementById('airtableUsersTableId').value = config.usersTableId || '';
+  document.getElementById('airtableVesselsBaseId').value = config.vesselsBaseId || '';
+  document.getElementById('airtableVesselsTableId').value = config.vesselsTableId || '';
+  document.getElementById('airtableTagsBaseId').value = config.tagsBaseId || '';
+  document.getElementById('airtableTagsTableId').value = config.tagsTableId || '';
+  document.getElementById('airtableStatus').textContent = '';
+}
+
+function bindAirtableEvents() {
+  document.getElementById('airtableSaveBtn').addEventListener('click', () => {
+    const config = {
+      // apiKey removed - using env var
+      baseId: document.getElementById('airtableBaseId').value.trim(),
+      tableId: document.getElementById('airtableTableId').value.trim(),
+      usersBaseId: document.getElementById('airtableUsersBaseId').value.trim(),
+      usersTableId: document.getElementById('airtableUsersTableId').value.trim(),
+      vesselsBaseId: document.getElementById('airtableVesselsBaseId').value.trim(),
+      vesselsTableId: document.getElementById('airtableVesselsTableId').value.trim(),
+      tagsBaseId: document.getElementById('airtableTagsBaseId').value.trim(),
+      tagsTableId: document.getElementById('airtableTagsTableId').value.trim(),
+    };
+    saveAirtableConfig(config);
+    const status = document.getElementById('airtableStatus');
+    status.textContent = 'Saved.';
+    status.style.color = '#38a169';
+  });
+
+  document.getElementById('airtableTestBtn').addEventListener('click', async () => {
+    const status = document.getElementById('airtableStatus');
+    status.textContent = 'Testing...';
+    status.style.color = 'var(--text-muted)';
+
+    const apiKey = getAirtableConfig().apiKey;
+    const baseId = document.getElementById('airtableBaseId').value.trim();
+    const tableId = document.getElementById('airtableTableId').value.trim();
+
+    if (!apiKey) {
+      status.textContent = 'API Key is missing (check Vercel env vars).';
+      status.style.color = '#e53e3e';
+      return;
+    }
+
+    if (!baseId || !tableId) {
+      status.textContent = 'Base ID and Table ID are required.';
+      status.style.color = '#e53e3e';
+      return;
+    }
+
+    try {
+      const url = `https://api.airtable.com/v0/${baseId}/${tableId}?maxRecords=1`;
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      if (res.ok) {
+        status.textContent = 'Connection successful.';
+        status.style.color = '#38a169';
+      } else {
+        const err = await res.json();
+        status.textContent = `Error: ${err.error?.message || res.statusText}`;
+        status.style.color = '#e53e3e';
+      }
+    } catch (err) {
+      status.textContent = `Network error: ${err.message}`;
+      status.style.color = '#e53e3e';
+    }
+  });
 }

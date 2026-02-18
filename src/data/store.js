@@ -51,8 +51,14 @@ export const TAGS = [
     { name: 'Others', color: '#ecc94b' }  // yellow-400
 ];
 
-// Shared State
-let currentUser = { id: 'admin', name: 'Sergey (Admin)', role: 'admin' };
+// Shared State — restore saved user from localStorage if available
+let currentUser = (() => {
+    try {
+        const saved = localStorage.getItem('lte_current_user');
+        if (saved) return JSON.parse(saved);
+    } catch (e) { /* ignore */ }
+    return null;
+})();
 let currentDateOffset = 0; // Shared date offset for Timesheet and Dashboard
 
 export function getCurrentUser() { return currentUser; }
