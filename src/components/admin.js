@@ -115,7 +115,7 @@ function renderList() {
         } else {
           btn.classList.add('confirm-delete');
           const originalHTML = btn.innerHTML;
-          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Confirm</span>';
+          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Delete</span>';
 
           setTimeout(() => {
             if (document.body.contains(btn)) {
@@ -168,7 +168,7 @@ function renderList() {
         } else {
           btn.classList.add('confirm-delete');
           const originalHTML = btn.innerHTML;
-          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Confirm</span>';
+          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Delete</span>';
 
           setTimeout(() => {
             if (document.body.contains(btn)) {
@@ -227,7 +227,7 @@ function renderList() {
         } else {
           btn.classList.add('confirm-delete');
           const originalHTML = btn.innerHTML;
-          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Confirm</span>';
+          btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Delete</span>';
 
           setTimeout(() => {
             if (document.body.contains(btn)) {
