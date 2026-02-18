@@ -275,9 +275,22 @@ export async function renderEntries() {
   });
   tbody.querySelectorAll('.delete').forEach(btn => {
     btn.addEventListener('click', async () => {
-      showLoading(true);
-      await deleteEntry(btn.dataset.id);
-      await renderEntries();
+      if (btn.classList.contains('confirm-delete')) {
+        showLoading(true);
+        await deleteEntry(btn.dataset.id);
+        await renderEntries();
+      } else {
+        btn.classList.add('confirm-delete');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span style="color:#e53e3e; font-weight:600; font-size:11px;">Delete</span>';
+
+        setTimeout(() => {
+          if (document.body.contains(btn)) {
+            btn.classList.remove('confirm-delete');
+            btn.innerHTML = originalHTML;
+          }
+        }, 3000);
+      }
     });
   });
 }
