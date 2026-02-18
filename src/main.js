@@ -9,9 +9,18 @@ import { getCurrentUser, setCurrentUser } from './data/store.js';
 
 const AUTH_KEY = 'lte_auth_session';
 
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '';
+
+function isLoginRequired() {
+    // Login required if any non-admin user has an OTP, or if admin password is set and there are admin users
+    if (isAuthRequired()) return true;
+    if (ADMIN_PASSWORD && getUsers().some(u => u.role && u.role.toLowerCase() === 'admin')) return true;
+    return false;
+}
+
 // Initialize all tabs
 document.addEventListener('DOMContentLoaded', () => {
-    if (isAuthRequired() && !isAuthenticated()) {
+    if (isLoginRequired() && !isAuthenticated()) {
         showLoginScreen();
         return;
     }
@@ -77,10 +86,19 @@ function showLoginScreen() {
             return;
         }
 
-        if (user.otp !== otp) {
-            errorEl.textContent = 'Invalid OTP code.';
-            errorEl.style.display = 'block';
-            return;
+        const isAdmin = user.role && user.role.toLowerCase() === 'admin';
+        if (isAdmin) {
+            if (!ADMIN_PASSWORD || otp !== ADMIN_PASSWORD) {
+                errorEl.textContent = 'Invalid password.';
+                errorEl.style.display = 'block';
+                return;
+            }
+        } else {
+            if (!user.otp || user.otp !== otp) {
+                errorEl.textContent = 'Invalid OTP code.';
+                errorEl.style.display = 'block';
+                return;
+            }
         }
 
         sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email: user.email, name: user.name }));
