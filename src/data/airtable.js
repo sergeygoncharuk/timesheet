@@ -7,10 +7,11 @@
 //   Airtable "Description" <-> app "activity"
 //   Airtable "Tag"         <-> app "tag"
 
-// Replace with your own Airtable API key
-const AIRTABLE_API_KEY = 'YOUR_AIRTABLE_API_KEY_HERE';
-const AIRTABLE_BASE_ID = 'app8ClpHU7djv9sgQ';
-const AIRTABLE_TABLE_ID = 'tblhjUPrBOxjWwXgo';
+// Keys are loaded from environment variables (see .env file)
+// In Vercel, set these in Project Settings → Environment Variables
+const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY || '';
+const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID || '';
+const AIRTABLE_TABLE_ID = import.meta.env.VITE_AIRTABLE_TABLE_ID || '';
 const API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`;
 
 const headers = {
