@@ -22,16 +22,12 @@ function loadAirtableConfig() {
 function getConfig() {
     const saved = loadAirtableConfig();
     return {
-        apiKey: saved.apiKey || import.meta.env.VITE_AIRTABLE_API_KEY || '',
-        baseId: saved.baseId || import.meta.env.VITE_AIRTABLE_BASE_ID || '',
-        tableId: saved.tableId || import.meta.env.VITE_AIRTABLE_TABLE_ID || '',
-        usersTableId: saved.usersTableId || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID || '',
-        usersTableId: saved.usersTableId || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID || '',
-        usersBaseId: saved.usersBaseId || import.meta.env.VITE_AIRTABLE_USERS_BASE_ID || '',
-        vesselsTableId: saved.vesselsTableId || import.meta.env.VITE_AIRTABLE_VESSELS_TABLE_ID || '',
-        vesselsBaseId: saved.vesselsBaseId || import.meta.env.VITE_AIRTABLE_VESSELS_BASE_ID || '',
-        tagsTableId: saved.tagsTableId || import.meta.env.VITE_AIRTABLE_TAGS_TABLE_ID || '',
-        tagsBaseId: saved.tagsBaseId || import.meta.env.VITE_AIRTABLE_TAGS_BASE_ID || '',
+        apiKey:          saved.apiKey          || import.meta.env.VITE_AIRTABLE_API_KEY          || '',
+        baseId:          saved.baseId          || import.meta.env.VITE_AIRTABLE_BASE_ID          || '',
+        tableId:         saved.tableId         || import.meta.env.VITE_AIRTABLE_TABLE_ID         || '',
+        usersTableId:    saved.usersTableId    || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID   || '',
+        vesselsTableId:  saved.vesselsTableId  || import.meta.env.VITE_AIRTABLE_VESSELS_TABLE_ID || '',
+        tagsTableId:     saved.tagsTableId     || import.meta.env.VITE_AIRTABLE_TAGS_TABLE_ID    || '',
     };
 }
 
@@ -182,7 +178,7 @@ export async function deleteRecord(recordId) {
 function getUsersTableUrl() {
     const c = getConfig();
     if (!c.usersTableId) throw new Error('Users Table ID is not configured');
-    return `https://api.airtable.com/v0/${c.usersBaseId || c.baseId}/${c.usersTableId}`;
+    return `https://api.airtable.com/v0/${c.baseId}/${c.usersTableId}`;
 }
 
 // Fetch all users from the Airtable Users table
@@ -267,7 +263,7 @@ export async function deleteUserFromAirtable(recordId) {
 function getVesselsTableUrl() {
     const c = getConfig();
     if (!c.vesselsTableId) throw new Error('Vessels Table ID is not configured');
-    return `https://api.airtable.com/v0/${c.vesselsBaseId || c.baseId}/${c.vesselsTableId}`;
+    return `https://api.airtable.com/v0/${c.baseId}/${c.vesselsTableId}`;
 }
 
 export async function fetchVesselsFromAirtable() {
@@ -341,7 +337,7 @@ export async function deleteVesselFromAirtable(recordId) {
 function getTagsTableUrl() {
     const c = getConfig();
     if (!c.tagsTableId) throw new Error('Tags Table ID is not configured');
-    return `https://api.airtable.com/v0/${c.tagsBaseId || c.baseId}/${c.tagsTableId}`;
+    return `https://api.airtable.com/v0/${c.baseId}/${c.tagsTableId}`;
 }
 
 export async function fetchTagsFromAirtable() {

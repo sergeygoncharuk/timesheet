@@ -77,44 +77,38 @@ function buildAdminHTML() {
       </div>
 
       <div class="admin-airtable-config" id="adminAirtableConfig" style="display:none;">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+          These override Vercel environment variables. Leave blank to use env vars.
+        </p>
 
         <div class="form-group">
-          <label>Base ID</label>
-          <input type="text" id="airtableBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+          <label>API Key</label>
+          <input type="password" id="airtableApiKey" placeholder="patXXX... (or set VITE_AIRTABLE_API_KEY in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
         <div class="form-group">
-          <input type="text" id="airtableTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+          <label>Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(shared by all tables)</span></label>
+          <input type="text" id="airtableBaseId" placeholder="appXXX... (or set VITE_AIRTABLE_BASE_ID in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
-        
-        <div style="margin-top: 15px; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: var(--text);">Users Connection (Optional)</div>
+
+        <div style="margin-top:16px; margin-bottom:8px; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);">Table IDs</div>
+
         <div class="form-group">
-          <label>Users Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(Leave empty to use main Base ID)</span></label>
-          <input type="text" id="airtableUsersBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+          <label>Timesheets Table ID</label>
+          <input type="text" id="airtableTableId" placeholder="tblXXX... (or set VITE_AIRTABLE_TABLE_ID in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
         <div class="form-group">
           <label>Users Table ID</label>
-          <input type="text" id="airtableUsersTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
-        </div>
-
-        <div style="margin-top: 15px; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: var(--text);">Vessels Connection (Optional)</div>
-        <div class="form-group">
-          <label>Vessels Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(Leave empty to use main Base ID)</span></label>
-          <input type="text" id="airtableVesselsBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+          <input type="text" id="airtableUsersTableId" placeholder="tblXXX... (or set VITE_AIRTABLE_USERS_TABLE_ID in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
         <div class="form-group">
           <label>Vessels Table ID</label>
-          <input type="text" id="airtableVesselsTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
-        </div>
-
-        <div style="margin-top: 15px; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: var(--text);">Tags Connection (Optional)</div>
-        <div class="form-group">
-          <label>Tags Base ID <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">(Leave empty to use main Base ID)</span></label>
-          <input type="text" id="airtableTagsBaseId" placeholder="appXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+          <input type="text" id="airtableVesselsTableId" placeholder="tblXXX... (or set VITE_AIRTABLE_VESSELS_TABLE_ID in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
         <div class="form-group">
           <label>Tags Table ID</label>
-          <input type="text" id="airtableTagsTableId" placeholder="tblXXX..." class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
+          <input type="text" id="airtableTagsTableId" placeholder="tblXXX... (or set VITE_AIRTABLE_TAGS_TABLE_ID in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
+
         <div style="display:flex; gap:10px; margin-top:8px;">
           <button class="btn btn-primary" id="airtableSaveBtn">Save</button>
           <button class="btn btn-secondary" id="airtableTestBtn" style="background:#e2e8f0; color:#4a5568;">Test Connection</button>
