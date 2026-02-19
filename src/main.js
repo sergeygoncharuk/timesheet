@@ -8,6 +8,7 @@ import { getUsers, getUserByEmail, syncUsers, syncVessels, syncTags } from './da
 import { getCurrentUser, setCurrentUser } from './data/store.js';
 
 const AUTH_KEY = 'lte_auth_session';
+const SESSION_DAYS = 30;
 
 function isLoginRequired() {
     return getUsers().length > 0;
@@ -48,11 +49,14 @@ function bootApp() {
 
 function isAuthenticated() {
     try {
-        const session = JSON.parse(sessionStorage.getItem(AUTH_KEY));
+        const session = JSON.parse(localStorage.getItem(AUTH_KEY));
         if (!session || !session.email) return false;
-        // If session has role, it was set via API auth — trust it
+        // Check expiry
+        if (session.expires && Date.now() > session.expires) {
+            localStorage.removeItem(AUTH_KEY);
+            return false;
+        }
         if (session.role) return true;
-        // Legacy fallback: verify user exists in local cache
         const user = getUserByEmail(session.email);
         return !!user;
     } catch { return false; }
@@ -150,7 +154,7 @@ function showLoginScreen() {
                 showError(error2El, data.error || 'Invalid code. Please try again.');
             } else {
                 const user = data.user;
-                sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email: user.email, name: user.name, role: user.role }));
+                localStorage.setItem(AUTH_KEY, JSON.stringify({ email: user.email, name: user.name, role: user.role, expires: Date.now() + SESSION_DAYS * 86400000 }));
                 setCurrentUser(user);
                 bootApp();
             }
@@ -244,7 +248,7 @@ function initUserSwitcher() {
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(AUTH_KEY);
         localStorage.removeItem('lte_current_user');
         window.location.reload();
     });
