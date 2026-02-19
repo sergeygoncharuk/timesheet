@@ -35,10 +35,15 @@ function bootApp() {
     initTides();
     initAdmin();
 
-    // Auto-sync from Airtable in background
-    syncUsers().catch(e => console.warn('Auto-sync users failed:', e));
-    syncVessels().catch(e => console.warn('Auto-sync vessels failed:', e));
-    syncTags().catch(e => console.warn('Auto-sync tags failed:', e));
+    // Auto-sync from Airtable in background, then refresh UI with fresh data
+    Promise.all([
+        syncUsers(),
+        syncVessels(),
+        syncTags()
+    ]).then(() => {
+        initUserSwitcher();
+        updateAdminTabVisibility();
+    }).catch(e => console.warn('Auto-sync failed:', e));
 
     // Tab navigation
     setupTabNavigation();
