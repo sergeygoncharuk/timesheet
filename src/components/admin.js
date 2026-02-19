@@ -41,7 +41,7 @@ function buildAdminHTML() {
         <input type="email" id="newUserEmail" placeholder="Email" class="admin-input" />
         <select id="newUserRole" class="admin-select">
           <option value="Vessel">Vessel</option>
-          <option value="Port captain">Port captain</option>
+          <option value="Dispatcher">Dispatcher</option>
           <option value="Admin">Admin</option>
         </select>
         <button class="btn btn-primary" id="adminAddUserBtn">+ Add User</button>
