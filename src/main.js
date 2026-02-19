@@ -4,18 +4,13 @@ import { initDashboard, refreshDashboard } from './components/dashboard.js';
 import { initWeather } from './components/weather.js';
 import { initTides } from './components/tides.js';
 import { initAdmin } from './components/admin.js';
-import { getUsers, isAuthRequired, getUserByEmail, syncUsers, syncVessels, syncTags } from './data/adminLists.js';
+import { getUsers, getUserByEmail, syncUsers, syncVessels, syncTags } from './data/adminLists.js';
 import { getCurrentUser, setCurrentUser } from './data/store.js';
 
 const AUTH_KEY = 'lte_auth_session';
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '';
-
 function isLoginRequired() {
-    // Login required if any non-admin user has an OTP, or if admin password is set and there are admin users
-    if (isAuthRequired()) return true;
-    if (ADMIN_PASSWORD && getUsers().some(u => u.role && u.role.toLowerCase() === 'admin')) return true;
-    return false;
+    return getUsers().length > 0;
 }
 
 // Initialize all tabs
@@ -55,7 +50,9 @@ function isAuthenticated() {
     try {
         const session = JSON.parse(sessionStorage.getItem(AUTH_KEY));
         if (!session || !session.email) return false;
-        // Verify user still exists
+        // If session has role, it was set via API auth — trust it
+        if (session.role) return true;
+        // Legacy fallback: verify user exists in local cache
         const user = getUserByEmail(session.email);
         return !!user;
     } catch { return false; }
@@ -67,49 +64,107 @@ function showLoginScreen() {
 
     const emailInput = document.getElementById('loginEmail');
     const otpInput = document.getElementById('loginOtp');
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
     const loginBtn = document.getElementById('loginBtn');
-    const errorEl = document.getElementById('loginError');
+    const backBtn = document.getElementById('backToEmailBtn');
+    const error1El = document.getElementById('loginError');
+    const error2El = document.getElementById('loginError2');
+    const emailDisplay = document.getElementById('loginEmailDisplay');
 
-    loginBtn.onclick = attemptLogin;
-    otpInput.onkeydown = (e) => { if (e.key === 'Enter') attemptLogin(); };
+    let pendingEmail = '';
 
-    function attemptLogin() {
-        errorEl.style.display = 'none';
-        const email = emailInput.value.trim();
-        const otp = otpInput.value.trim();
-
-        if (!email || !otp) {
-            errorEl.textContent = 'Please enter email and OTP.';
-            errorEl.style.display = 'block';
-            return;
-        }
-
-        const user = getUserByEmail(email);
-        if (!user) {
-            errorEl.textContent = 'User not found.';
-            errorEl.style.display = 'block';
-            return;
-        }
-
-        const isAdmin = user.role && user.role.toLowerCase() === 'admin';
-        if (isAdmin) {
-            if (!ADMIN_PASSWORD || otp !== ADMIN_PASSWORD) {
-                errorEl.textContent = 'Invalid password.';
-                errorEl.style.display = 'block';
-                return;
-            }
-        } else {
-            if (!user.otp || user.otp !== otp) {
-                errorEl.textContent = 'Invalid OTP code.';
-                errorEl.style.display = 'block';
-                return;
-            }
-        }
-
-        sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email: user.email, name: user.name }));
-        setCurrentUser(user);
-        bootApp();
+    function showError(el, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
     }
+
+    function hideError(el) {
+        el.style.display = 'none';
+    }
+
+    function showStep2() {
+        document.getElementById('loginStep1').style.display = 'none';
+        document.getElementById('loginStep2').style.display = '';
+        emailDisplay.textContent = pendingEmail;
+        hideError(error2El);
+        otpInput.value = '';
+        otpInput.focus();
+    }
+
+    function showStep1() {
+        document.getElementById('loginStep1').style.display = '';
+        document.getElementById('loginStep2').style.display = 'none';
+        hideError(error1El);
+        hideError(error2El);
+    }
+
+    sendOtpBtn.onclick = async () => {
+        hideError(error1El);
+        const email = emailInput.value.trim();
+        if (!email) {
+            showError(error1El, 'Please enter your email.');
+            return;
+        }
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.textContent = 'Sending...';
+        try {
+            const res = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                showError(error1El, data.error || 'Failed to send code. Please try again.');
+            } else {
+                pendingEmail = email;
+                showStep2();
+            }
+        } catch {
+            showError(error1El, 'Network error. Please try again.');
+        } finally {
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.textContent = 'Send Code';
+        }
+    };
+
+    emailInput.onkeydown = (e) => { if (e.key === 'Enter') sendOtpBtn.click(); };
+
+    loginBtn.onclick = async () => {
+        hideError(error2El);
+        const otp = otpInput.value.trim();
+        if (!otp) {
+            showError(error2El, 'Please enter your code.');
+            return;
+        }
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Signing in...';
+        try {
+            const res = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: pendingEmail, otp })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                showError(error2El, data.error || 'Invalid code. Please try again.');
+            } else {
+                const user = data.user;
+                sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email: user.email, name: user.name, role: user.role }));
+                setCurrentUser(user);
+                bootApp();
+            }
+        } catch {
+            showError(error2El, 'Network error. Please try again.');
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Sign In';
+        }
+    };
+
+    otpInput.onkeydown = (e) => { if (e.key === 'Enter') loginBtn.click(); };
+
+    backBtn.onclick = () => showStep1();
 }
 
 function initUserSwitcher() {

@@ -17,17 +17,30 @@
   <div id="loginScreen" class="login-screen" style="display:none;">
     <div class="login-card">
       <h2 class="login-title">LTE Timesheet</h2>
-      <p class="login-subtitle">Enter your email and password to continue</p>
-      <div class="form-group">
-        <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" placeholder="your@email.com" />
+
+      <!-- Step 1: Email -->
+      <div id="loginStep1">
+        <p class="login-subtitle">Enter your email to receive a sign-in code</p>
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <div id="loginError" style="color:#e53e3e; font-size:13px; margin-bottom:12px; display:none;"></div>
+        <button class="btn btn-primary" id="sendOtpBtn" style="width:100%;">Send Code</button>
       </div>
-      <div class="form-group">
-        <label for="loginOtp">Password</label>
-        <input type="password" id="loginOtp" placeholder="Enter your password or OTP" />
+
+      <!-- Step 2: OTP -->
+      <div id="loginStep2" style="display:none;">
+        <p class="login-subtitle">Enter the sign-in code sent to your email</p>
+        <div id="loginEmailDisplay" style="font-size:13px; color:#718096; margin-bottom:16px; text-align:center; font-weight:500;"></div>
+        <div class="form-group">
+          <label for="loginOtp">Sign-In Code</label>
+          <input type="text" id="loginOtp" placeholder="Enter code" maxlength="20" autocomplete="one-time-code" />
+        </div>
+        <div id="loginError2" style="color:#e53e3e; font-size:13px; margin-bottom:12px; display:none;"></div>
+        <button class="btn btn-primary" id="loginBtn" style="width:100%;">Sign In</button>
+        <button type="button" class="btn btn-secondary" id="backToEmailBtn" style="width:100%; margin-top:8px;">Use different email</button>
       </div>
-      <div id="loginError" style="color:#e53e3e; font-size:13px; margin-bottom:12px; display:none;"></div>
-      <button class="btn btn-primary" id="loginBtn" style="width:100%;">Sign In</button>
     </div>
   </div>
 
