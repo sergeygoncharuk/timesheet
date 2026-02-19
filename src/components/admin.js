@@ -90,7 +90,37 @@ function buildAdminHTML() {
           <input type="text" id="airtableTagsTableId" placeholder="tblXXX... (or set VITE_AIRTABLE_TAGS_TABLE_ID in Vercel)" class="admin-input" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px;" />
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:8px;">
+        <div style="margin-top:16px; margin-bottom:8px; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);">Timesheet Field Names</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Match these to your exact Airtable column names.</p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">Vessel column</label>
+            <input type="text" id="fieldVessel" placeholder="Vessel" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">Date column</label>
+            <input type="text" id="fieldDate" placeholder="Date" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">Start time column</label>
+            <input type="text" id="fieldStart" placeholder="Start" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">End time column</label>
+            <input type="text" id="fieldEnd" placeholder="End" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">Activity column</label>
+            <input type="text" id="fieldActivity" placeholder="Description" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">Tag/Type column</label>
+            <input type="text" id="fieldTag" placeholder="Type" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
           <button class="btn btn-primary" id="airtableSaveBtn">Save</button>
           <button class="btn btn-secondary" id="airtableTestBtn" style="background:#e2e8f0; color:#4a5568;">Test Connection</button>
         </div>
@@ -658,6 +688,12 @@ function loadAirtableForm() {
   document.getElementById('airtableUsersTableId').value = config.usersTableId || '';
   document.getElementById('airtableVesselsTableId').value = config.vesselsTableId || '';
   document.getElementById('airtableTagsTableId').value = config.tagsTableId || '';
+  document.getElementById('fieldVessel').value = config.fieldVessel || 'Vessel';
+  document.getElementById('fieldDate').value = config.fieldDate || 'Date';
+  document.getElementById('fieldStart').value = config.fieldStart || 'Start';
+  document.getElementById('fieldEnd').value = config.fieldEnd || 'End';
+  document.getElementById('fieldActivity').value = config.fieldActivity || 'Description';
+  document.getElementById('fieldTag').value = config.fieldTag || 'Type';
   document.getElementById('airtableStatus').textContent = '';
 }
 
@@ -670,6 +706,12 @@ function bindAirtableEvents() {
       usersTableId:   document.getElementById('airtableUsersTableId').value.trim(),
       vesselsTableId: document.getElementById('airtableVesselsTableId').value.trim(),
       tagsTableId:    document.getElementById('airtableTagsTableId').value.trim(),
+      fieldVessel:    document.getElementById('fieldVessel').value.trim() || 'Vessel',
+      fieldDate:      document.getElementById('fieldDate').value.trim() || 'Date',
+      fieldStart:     document.getElementById('fieldStart').value.trim() || 'Start',
+      fieldEnd:       document.getElementById('fieldEnd').value.trim() || 'End',
+      fieldActivity:  document.getElementById('fieldActivity').value.trim() || 'Description',
+      fieldTag:       document.getElementById('fieldTag').value.trim() || 'Type',
     };
     saveAirtableConfig(config);
     const status = document.getElementById('airtableStatus');

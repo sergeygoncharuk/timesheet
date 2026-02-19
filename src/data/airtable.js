@@ -28,6 +28,13 @@ function getConfig() {
         usersTableId:    saved.usersTableId    || import.meta.env.VITE_AIRTABLE_USERS_TABLE_ID   || '',
         vesselsTableId:  saved.vesselsTableId  || import.meta.env.VITE_AIRTABLE_VESSELS_TABLE_ID || '',
         tagsTableId:     saved.tagsTableId     || import.meta.env.VITE_AIRTABLE_TAGS_TABLE_ID    || '',
+        // Timesheet field name mapping (customizable to match your Airtable column names)
+        fieldVessel:     saved.fieldVessel     || 'Vessel',
+        fieldDate:       saved.fieldDate       || 'Date',
+        fieldStart:      saved.fieldStart      || 'Start',
+        fieldEnd:        saved.fieldEnd        || 'End',
+        fieldActivity:   saved.fieldActivity   || 'Description',
+        fieldTag:        saved.fieldTag        || 'Type',
     };
 }
 
@@ -54,30 +61,29 @@ function getHeaders() {
 
 // Convert app entry -> Airtable fields
 function toAirtableFields(entry) {
+    const c = getConfig();
     return {
-        Vessel: entry.vessel || '',
-        Date: entry.date || '',
-        Start: entry.start || '',
-        End: entry.end || '',
-        Description: entry.activity || '',
-        Type: entry.tag || ''
+        [c.fieldVessel]:   entry.vessel || '',
+        [c.fieldDate]:     entry.date || '',
+        [c.fieldStart]:    entry.start || '',
+        [c.fieldEnd]:      entry.end || '',
+        [c.fieldActivity]: entry.activity || '',
+        [c.fieldTag]:      entry.tag || ''
     };
 }
 
 // Convert Airtable record -> app entry
 function fromAirtableRecord(record) {
-    // Airtable Date field returns ISO format YYYY-MM-DD
-    const rawDate = record.fields.Date || '';
-
+    const c = getConfig();
     return {
         id: record.id,
         airtableId: record.id,
-        vessel: record.fields.Vessel || '',
-        date: rawDate,
-        start: record.fields.Start || '',
-        end: record.fields.End || '',
-        activity: record.fields.Description || '',
-        tag: record.fields.Type || ''
+        vessel:   record.fields[c.fieldVessel]   || '',
+        date:     record.fields[c.fieldDate]     || '',
+        start:    record.fields[c.fieldStart]    || '',
+        end:      record.fields[c.fieldEnd]      || '',
+        activity: record.fields[c.fieldActivity] || '',
+        tag:      record.fields[c.fieldTag]      || ''
     };
 }
 
