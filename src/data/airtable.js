@@ -1,8 +1,8 @@
 // Airtable API integration
 // Airtable field mapping:
 //   Airtable "Date"        <-> app "date"
-//   Airtable "From"        <-> app "start"
-//   Airtable "To"          <-> app "end"
+//   Airtable "Start"       <-> app "start"
+//   Airtable "End"         <-> app "end"
 //   Airtable "Vessel"      <-> app "vessel"
 //   Airtable "Description" <-> app "activity"
 //   Airtable "Tag"         <-> app "tag"
@@ -57,8 +57,8 @@ function toAirtableFields(entry) {
     return {
         Vessel: entry.vessel || '',
         Date: entry.date || '',
-        From: entry.start || '',
-        To: entry.end || '',
+        Start: entry.start || '',
+        End: entry.end || '',
         Description: entry.activity || '',
         Tag: entry.tag || ''
     };
@@ -74,8 +74,8 @@ function fromAirtableRecord(record) {
         airtableId: record.id,
         vessel: record.fields.Vessel || '',
         date: rawDate,
-        start: record.fields.From || '',
-        end: record.fields.To || '',
+        start: record.fields.Start || '',
+        end: record.fields.End || '',
         activity: record.fields.Description || '',
         tag: record.fields.Tag || ''
     };
