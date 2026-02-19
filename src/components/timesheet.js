@@ -1,6 +1,9 @@
 // Timesheet Tab Component
+import { Chart, registerables } from 'chart.js';
 import { getVessels, getTags } from '../data/adminLists.js';
 import { getCurrentUser } from '../data/store.js';
+
+Chart.register(...registerables);
 import {
   getEntriesForVesselDate, addEntry, updateEntry, deleteEntry,
   calcDuration, formatDuration, formatTime, getDateStr, formatDateDisplay,
@@ -10,6 +13,9 @@ import {
 let currentVessel = getVessels()[0];
 let currentDateOffset = 0;
 let currentDateStr = getDateStr(0);
+let lastEntries = [];
+let inlineDashChart = null;
+let inlineDashOpen = false;
 
 function populateVesselSelect() {
   const sel = document.getElementById('vesselSelect');
@@ -66,6 +72,8 @@ export function initTimesheet() {
   // Sync date from store
   currentDateOffset = getDateOffset();
   currentDateStr = getDateStr(currentDateOffset);
+  inlineDashOpen = false;
+  inlineDashChart = null;
 
   container.innerHTML = buildTimesheetHTML();
   populateVesselSelect();
@@ -108,6 +116,21 @@ function buildTimesheetHTML() {
         <div class="progress-bar-fill" id="progressBarFill"></div>
       </div>
       <span class="progress-bar-label" id="progressBarLabel">0h / 24h</span>
+      <button class="progress-expand-btn" id="progressExpandBtn" title="Show day summary">
+        <svg id="progressExpandIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="inline-dashboard" id="inlineDashboard">
+      <div class="dashboard-grid" id="inlineDashStats"></div>
+      <div class="chart-card" style="margin-top:16px;">
+        <h3>Hours by Tag</h3>
+        <div class="chart-container">
+          <canvas id="inlineTagChart"></canvas>
+        </div>
+      </div>
     </div>
 
     <div class="loading-indicator" id="loadingIndicator" style="display:none;">
@@ -213,10 +236,13 @@ export async function renderEntries() {
   // Get latest tags for colors
   const allTags = getTags();
 
+  lastEntries = entries;
+
   if (entries.length === 0) {
     table.style.display = 'none';
     emptyState.style.display = 'block';
     document.getElementById('progressBarContainer').style.display = 'none';
+    if (inlineDashOpen) renderInlineDashboard();
     return;
   }
 
@@ -290,6 +316,8 @@ export async function renderEntries() {
   const mins = totalMinutes % 60;
   progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
 
+  if (inlineDashOpen) renderInlineDashboard();
+
   // Double-click to edit
   tbody.querySelectorAll('.entry-row').forEach(row => {
     row.addEventListener('dblclick', () => {
@@ -339,6 +367,98 @@ function bindTimesheetEvents() {
   });
 
   document.getElementById('addEntryBtn').addEventListener('click', openAddForm);
+
+  document.getElementById('progressExpandBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleInlineDashboard();
+  });
+}
+
+function toggleInlineDashboard() {
+  inlineDashOpen = !inlineDashOpen;
+  const panel = document.getElementById('inlineDashboard');
+  const icon = document.getElementById('progressExpandIcon');
+  if (!panel) return;
+  if (inlineDashOpen) {
+    panel.classList.add('open');
+    if (icon) icon.style.transform = 'rotate(180deg)';
+    renderInlineDashboard();
+  } else {
+    panel.classList.remove('open');
+    if (icon) icon.style.transform = '';
+  }
+}
+
+function renderInlineDashboard() {
+  const statsEl = document.getElementById('inlineDashStats');
+  const canvas = document.getElementById('inlineTagChart');
+  if (!statsEl || !canvas) return;
+
+  const entries = lastEntries;
+  let totalMin = 0;
+  const tagMinutes = {};
+  entries.forEach(e => {
+    const dur = calcDuration(e.start, e.end);
+    totalMin += dur;
+    tagMinutes[e.tag] = (tagMinutes[e.tag] || 0) + dur;
+  });
+
+  statsEl.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${entries.length}</div>
+      <div class="stat-label">Activities</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${formatDuration(totalMin)}</div>
+      <div class="stat-label">Total Duration</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${Object.keys(tagMinutes).length}</div>
+      <div class="stat-label">Tags Used</div>
+    </div>
+  `;
+
+  if (inlineDashChart) { inlineDashChart.destroy(); inlineDashChart = null; }
+
+  const labels = Object.keys(tagMinutes);
+  const data = labels.map(l => Math.round(tagMinutes[l] / 60 * 100) / 100);
+  const allTags = getTags();
+  const colors = labels.map(l => {
+    const tag = allTags.find(t => t.name === l);
+    return tag ? tag.color : '#cbd5e0';
+  });
+
+  if (labels.length === 0) {
+    inlineDashChart = new Chart(canvas, {
+      type: 'bar',
+      data: { labels: ['No data'], datasets: [{ data: [0], backgroundColor: '#E0E0E0' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+    return;
+  }
+
+  inlineDashChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Hours', data, backgroundColor: colors, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} hours` } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Hours' }, grid: { color: '#F0F0F0' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
 }
 
 export function refreshTimesheet() {

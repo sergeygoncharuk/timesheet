@@ -390,6 +390,43 @@ body {
   text-align: right;
 }
 
+.progress-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.progress-expand-btn:hover {
+  background: var(--primary-ultra-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.progress-expand-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.inline-dashboard {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.inline-dashboard.open {
+  max-height: 700px;
+  opacity: 1;
+}
+
 .timesheet-title {
   font-size: 24px;
   font-weight: 700;
