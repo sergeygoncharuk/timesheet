@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     const AIRTABLE_BASE_ID = process.env.VITE_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
     const USERS_TABLE_ID = process.env.VITE_AIRTABLE_USERS_TABLE_ID || process.env.AIRTABLE_USERS_TABLE_ID;
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const RESEND_FROM = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
     if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !USERS_TABLE_ID || !RESEND_API_KEY) {
         return res.status(500).json({ error: 'Server configuration error (missing env vars)' });
@@ -71,16 +72,16 @@ export default async function handler(req, res) {
 
         // 4. Send Email via Resend
         const resend = new Resend(RESEND_API_KEY);
-        const { data: emailData, error } = await resend.emails.send({
-            from: 'LTE Timesheet <onboarding@resend.dev>', // Update this if you have a custom domain
+        const { error: emailError } = await resend.emails.send({
+            from: `LTE Timesheet <${RESEND_FROM}>`,
             to: [email],
             subject: 'Your Login Code',
             html: `<p>Hi ${userName},</p><p>Your login code for LTE Timesheet is: <strong>${otp}</strong></p><p>Passage is safe.</p>`
         });
 
-        if (error) {
-            console.error('Resend error:', error);
-            throw new Error('Failed to send email');
+        if (emailError) {
+            console.error('Resend error:', JSON.stringify(emailError));
+            throw new Error(emailError.message || 'Failed to send email');
         }
 
         return res.status(200).json({ success: true, message: 'OTP sent' });
