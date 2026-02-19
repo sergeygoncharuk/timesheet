@@ -32,7 +32,9 @@ export default async function handler(req, res) {
         });
 
         if (!findRes.ok) {
-            throw new Error('Failed to query Airtable');
+            const findErr = await findRes.json().catch(() => ({}));
+            console.error('Airtable find user error:', findRes.status, JSON.stringify(findErr));
+            throw new Error(findErr?.error?.message || `Failed to query Airtable (${findRes.status})`);
         }
 
         const data = await findRes.json();
@@ -56,12 +58,15 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                fields: { OTP: otp }
+                fields: { OTP: otp },
+                typecast: true
             })
         });
 
         if (!updateRes.ok) {
-            throw new Error('Failed to save OTP to Airtable');
+            const updateErr = await updateRes.json().catch(() => ({}));
+            console.error('Airtable OTP update error:', updateRes.status, JSON.stringify(updateErr));
+            throw new Error(updateErr?.error?.message || `Failed to save OTP to Airtable (${updateRes.status})`);
         }
 
         // 4. Send Email via Resend
