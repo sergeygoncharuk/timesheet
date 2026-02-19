@@ -199,7 +199,6 @@ export async function fetchUsersFromAirtable() {
             name: r.fields.Name || '',
             email: r.fields.Email || '',
             role: r.fields.Role || 'Vessel',
-            otp: r.fields.OTP || '',
             sortId: r.fields.ID || 0
         })));
         offset = data.offset || null;
@@ -214,7 +213,7 @@ export async function pushUserToAirtable(user) {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({
-            fields: { Name: user.name, Email: user.email || '', Role: user.role || 'Vessel', OTP: user.otp || '' },
+            fields: { Name: user.name, Email: user.email || '', Role: user.role || 'Vessel' },
             typecast: true
         })
     });
@@ -233,8 +232,7 @@ export async function updateUserInAirtable(recordId, updates) {
             fields: {
                 Name: updates.name,
                 Email: updates.email,
-                Role: updates.role,
-                OTP: updates.otp
+                Role: updates.role
             },
             typecast: true
         })

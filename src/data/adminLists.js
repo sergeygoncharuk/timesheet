@@ -163,11 +163,8 @@ export async function syncUsers() {
             name: u.name,
             email: u.email,
             role: u.role,
-            id: u.airtableId, // Store ID for updates
-            otp: u.otp || '',
+            id: u.airtableId,
             sortId: u.sortId
-            // Since OTP isn't in Airtable, we lose it on sync unless we merge.
-            // For now, let's just use Airtable data.
         }));
 
         // Sort by ID
@@ -322,22 +319,8 @@ export async function updateUser(oldName, updatedUser) {
     }
 }
 
-export async function generateOtp(userName) {
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    // OTP is local-only for now, so we use the local update logic inside updateUser
-    return await updateUser(userName, { otp }) ? otp : null;
-}
-
-export async function clearOtp(userName) {
-    return await updateUser(userName, { otp: '' });
-}
-
 export function getUserByEmail(email) {
     return getUsers().find(u => u.email && u.email.toLowerCase() === email.toLowerCase()) || null;
-}
-
-export function isAuthRequired() {
-    return getUsers().some(u => u.otp);
 }
 
 export function addTag(tag) {

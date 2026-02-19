@@ -1,5 +1,5 @@
 // Admin Tab Component — Manage Vessels, Users, Tags
-import { getVessels, getUsers, getTags, addItem, removeItem, renameItem, addUser, removeUser, updateUser, addTag, removeTag, updateTag, moveItem, generateOtp, clearOtp, syncUsers, syncVessels, syncTags } from '../data/adminLists.js';
+import { getVessels, getUsers, getTags, addItem, removeItem, renameItem, addUser, removeUser, updateUser, addTag, removeTag, updateTag, moveItem, syncUsers, syncVessels, syncTags } from '../data/adminLists.js';
 import { getAirtableConfig, saveAirtableConfig, fetchUsersFromAirtable, pushUserToAirtable } from '../data/airtable.js';
 
 let activeList = 'users'; // 'users' | 'vessels' | 'tags'
@@ -135,13 +135,6 @@ function renderList() {
             <span class="user-email">${u.email || 'No email'}</span>
           </div>
           <div class="admin-item-actions">
-            ${u.otp
-        ? `<span class="otp-code" data-name="${u.name}" title="Click to copy">${u.otp}</span>
-                 <button class="admin-action-btn reset-otp" data-name="${u.name}" title="Reset OTP" style="color:#e53e3e;">
-                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                 </button>`
-        : `<button class="admin-action-btn gen-otp" data-name="${u.name}" title="Generate OTP" style="font-size:11px; font-weight:600; white-space:nowrap;">OTP</button>`
-      }
             <button class="admin-action-btn edit-user" data-name="${u.name}" title="Edit">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -185,31 +178,6 @@ function renderList() {
         const name = btn.dataset.name;
         const user = items.find(u => u.name === name);
         startEditUser(user);
-      });
-    });
-
-    listEl.querySelectorAll('.gen-otp').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const originalText = btn.textContent;
-        btn.textContent = '...';
-        await generateOtp(btn.dataset.name);
-        renderList();
-      });
-    });
-
-    listEl.querySelectorAll('.reset-otp').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await clearOtp(btn.dataset.name);
-        renderList();
-      });
-    });
-
-    listEl.querySelectorAll('.otp-code').forEach(el => {
-      el.addEventListener('click', () => {
-        navigator.clipboard.writeText(el.textContent.trim());
-        const orig = el.textContent;
-        el.textContent = 'Copied!';
-        setTimeout(() => { el.textContent = orig; }, 1500);
       });
     });
 

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -15,8 +16,9 @@ export default async function handler(req, res) {
     const USERS_TABLE_ID = process.env.VITE_AIRTABLE_USERS_TABLE_ID || process.env.AIRTABLE_USERS_TABLE_ID;
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const RESEND_FROM = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const OTP_SECRET = process.env.OTP_SECRET;
 
-    if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !USERS_TABLE_ID || !RESEND_API_KEY) {
+    if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !USERS_TABLE_ID || !RESEND_API_KEY || !OTP_SECRET) {
         return res.status(500).json({ error: 'Server configuration error (missing env vars)' });
     }
 
@@ -44,31 +46,15 @@ export default async function handler(req, res) {
         }
 
         const userRecord = data.records[0];
-        const userId = userRecord.id;
         const userName = userRecord.fields.Name;
 
         // 2. Generate OTP
         const otp = String(Math.floor(100000 + Math.random() * 900000));
 
-        // 3. Update Airtable with OTP
-        const updateUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${USERS_TABLE_ID}/${userId}`;
-        const updateRes = await fetch(updateUrl, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                fields: { OTP: otp },
-                typecast: true
-            })
-        });
-
-        if (!updateRes.ok) {
-            const updateErr = await updateRes.json().catch(() => ({}));
-            console.error('Airtable OTP update error:', updateRes.status, JSON.stringify(updateErr));
-            throw new Error(updateErr?.error?.message || `Failed to save OTP to Airtable (${updateRes.status})`);
-        }
+        // 3. Sign OTP as a token (no Airtable write needed)
+        const payload = JSON.stringify({ email, otp, exp: Date.now() + 10 * 60 * 1000 });
+        const sig = crypto.createHmac('sha256', OTP_SECRET).update(payload).digest('hex');
+        const token = Buffer.from(payload).toString('base64') + '.' + sig;
 
         // 4. Send Email via Resend
         const resend = new Resend(RESEND_API_KEY);
@@ -76,7 +62,7 @@ export default async function handler(req, res) {
             from: `LTE Timesheet <${RESEND_FROM}>`,
             to: [email],
             subject: 'Your Login Code',
-            html: `<p>Hi ${userName},</p><p>Your login code for LTE Timesheet is: <strong>${otp}</strong></p><p>Passage is safe.</p>`
+            html: `<p>Hi ${userName},</p><p>Your login code for LTE Timesheet is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
         });
 
         if (emailError) {
@@ -84,7 +70,7 @@ export default async function handler(req, res) {
             throw new Error(emailError.message || 'Failed to send email');
         }
 
-        return res.status(200).json({ success: true, message: 'OTP sent' });
+        return res.status(200).json({ success: true, message: 'OTP sent', token });
 
     } catch (e) {
         console.error('Send OTP Error:', e);

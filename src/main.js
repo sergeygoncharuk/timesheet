@@ -81,6 +81,7 @@ function showLoginScreen() {
     const emailDisplay = document.getElementById('loginEmailDisplay');
 
     let pendingEmail = '';
+    let pendingToken = '';
 
     function showError(el, msg) {
         el.textContent = msg;
@@ -127,6 +128,7 @@ function showLoginScreen() {
                 showError(error1El, data.error || 'Failed to send code. Please try again.');
             } else {
                 pendingEmail = email;
+                pendingToken = data.token || '';
                 showStep2();
             }
         } catch {
@@ -152,7 +154,7 @@ function showLoginScreen() {
             const res = await fetch('/api/auth/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: pendingEmail, otp })
+                body: JSON.stringify({ email: pendingEmail, otp, token: pendingToken })
             });
             const data = await res.json();
             if (!res.ok) {
