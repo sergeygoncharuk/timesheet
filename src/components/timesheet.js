@@ -112,9 +112,7 @@ function buildTimesheetHTML() {
     </div>
 
     <div class="progress-bar-container" id="progressBarContainer" style="display:none;">
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progressBarFill"></div>
-      </div>
+      <div class="progress-bar-track" id="progressBarTrack"></div>
       <span class="progress-bar-label" id="progressBarLabel">0h / 24h</span>
       <button class="progress-expand-btn" id="progressExpandBtn" title="Show day summary">
         <svg id="progressExpandIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -304,14 +302,11 @@ export async function renderEntries() {
   // Total duration for progress bar
   const totalMinutes = entries.reduce((sum, e) => sum + calcDuration(e.start, e.end), 0);
 
-  // Update progress bar
-  const maxMinutes = 24 * 60;
-  const pct = Math.min((totalMinutes / maxMinutes) * 100, 100);
+  // Update progress bar with per-entry segments
   const progressContainer = document.getElementById('progressBarContainer');
-  const progressFill = document.getElementById('progressBarFill');
   const progressLabel = document.getElementById('progressBarLabel');
   progressContainer.style.display = 'flex';
-  progressFill.style.width = `${pct}%`;
+  renderProgressSegments(entries, allTags);
   const hrs = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
   progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
@@ -371,6 +366,31 @@ function bindTimesheetEvents() {
   document.getElementById('progressExpandBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     toggleInlineDashboard();
+  });
+}
+
+function timeToMinutes(hhmm) {
+  return parseInt(hhmm.substring(0, 2), 10) * 60 + parseInt(hhmm.substring(2, 4), 10);
+}
+
+function renderProgressSegments(entries, allTags) {
+  const track = document.getElementById('progressBarTrack');
+  if (!track) return;
+  track.innerHTML = '';
+  entries.forEach(entry => {
+    const startMin = timeToMinutes(entry.start);
+    const endMin = timeToMinutes(entry.end);
+    const left = (startMin / 1440) * 100;
+    const width = ((endMin - startMin) / 1440) * 100;
+    const tagObj = allTags.find(t => t.name === entry.tag);
+    const color = tagObj ? tagObj.color : '#4285F4';
+    const seg = document.createElement('div');
+    seg.className = 'progress-segment';
+    seg.style.left = `${left}%`;
+    seg.style.width = `${width}%`;
+    seg.style.background = color;
+    seg.title = `${formatTime(entry.start)}–${formatTime(entry.end)} ${entry.tag}`;
+    track.appendChild(seg);
   });
 }
 
