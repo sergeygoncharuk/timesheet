@@ -5,7 +5,7 @@
 //   Airtable "End"         <-> app "end"
 //   Airtable "Vessel"      <-> app "vessel"
 //   Airtable "Description" <-> app "activity"
-//   Airtable "Tag"         <-> app "tag"
+//   Airtable "Type"        <-> app "tag"
 
 // Keys are loaded from localStorage first, then environment variables as fallback.
 // In Vercel, set env vars in Project Settings → Environment Variables.
@@ -60,7 +60,7 @@ function toAirtableFields(entry) {
         Start: entry.start || '',
         End: entry.end || '',
         Description: entry.activity || '',
-        Tag: entry.tag || ''
+        Type: entry.tag || ''
     };
 }
 
@@ -77,7 +77,7 @@ function fromAirtableRecord(record) {
         start: record.fields.Start || '',
         end: record.fields.End || '',
         activity: record.fields.Description || '',
-        tag: record.fields.Tag || ''
+        tag: record.fields.Type || ''
     };
 }
 
