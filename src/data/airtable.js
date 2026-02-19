@@ -225,17 +225,14 @@ export async function pushUserToAirtable(user) {
 }
 
 export async function updateUserInAirtable(recordId, updates) {
+    const fields = {};
+    if (updates.name !== undefined) fields.Name = updates.name;
+    if (updates.email !== undefined) fields.Email = updates.email;
+    if (updates.role !== undefined) fields.Role = updates.role;
     const res = await fetch(`${getUsersTableUrl()}/${recordId}`, {
         method: 'PATCH',
         headers: getHeaders(),
-        body: JSON.stringify({
-            fields: {
-                Name: updates.name,
-                Email: updates.email,
-                Role: updates.role
-            },
-            typecast: true
-        })
+        body: JSON.stringify({ fields, typecast: true })
     });
     if (!res.ok) {
         const err = await res.json();

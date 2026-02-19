@@ -271,8 +271,9 @@ export async function renderEntries() {
     const tagObj = allTags.find(t => t.name === entry.tag);
     const tagColor = tagObj ? tagObj.color : '#cbd5e0';
 
+    const pendingStyle = entry._pendingSync ? ' style="opacity:0.6;" title="Not saved to Airtable"' : '';
     rowsHTML += `
-      <tr class="entry-row" data-id="${entry.id}" style="cursor: pointer;">
+      <tr class="entry-row" data-id="${entry.id}" style="cursor: pointer;"${pendingStyle ? pendingStyle : ''}>
         <td>${formatTime(entry.start)}</td>
         <td>${formatTime(entry.end)}</td>
         <td>${formatDuration(dur)}</td>
@@ -628,6 +629,21 @@ export function closePanel() {
   document.getElementById('panelOverlay').classList.remove('open');
 }
 
+function showSyncError(msg) {
+  const container = document.getElementById('tab-timesheet');
+  if (!container) return;
+  const existing = container.querySelector('.sync-error-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.className = 'sync-error-banner';
+  banner.style.cssText = 'background:#fff5f5; border:1px solid #fed7d7; color:#c53030; padding:10px 14px; border-radius:8px; font-size:13px; margin:8px 0; display:flex; align-items:center; gap:8px;';
+  banner.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Failed to save to Airtable: ${msg}. Check Airtable settings in the Admin tab.</span>`;
+  const table = document.getElementById('entriesTable');
+  if (table) table.before(banner);
+  setTimeout(() => banner.remove(), 8000);
+}
+
 export async function handleFormSubmit(e) {
   e.preventDefault();
 
@@ -705,13 +721,13 @@ export async function handleFormSubmit(e) {
   closePanel();
   showLoading(true);
 
-  if (idVal) {
-    await updateEntry(idVal, data);
-  } else {
-    await addEntry(data);
-  }
+  const { error } = idVal ? await updateEntry(idVal, data) : await addEntry(data);
 
   await renderEntries();
+
+  if (error) {
+    showSyncError(error);
+  }
 }
 
 export function getCurrentVessel() { return currentVessel; }

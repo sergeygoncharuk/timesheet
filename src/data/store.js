@@ -76,11 +76,12 @@ export function setDateOffset(offset) { currentDateOffset = offset; }
 export async function getEntriesForVesselDate(vessel, dateStr) {
     try {
         const entries = await fetchRecordsForVesselDate(vessel, dateStr);
-        // Update local cache with fetched entries
-        const cache = getCache().filter(e => !(e.vessel === vessel && e.date === dateStr));
-        cache.push(...entries);
-        setCache(cache);
-        return entries;
+        // Preserve any locally-saved pending entries that haven't synced yet
+        const pending = getCache().filter(e => e.vessel === vessel && e.date === dateStr && e._pendingSync);
+        const others = getCache().filter(e => !(e.vessel === vessel && e.date === dateStr));
+        others.push(...entries, ...pending);
+        setCache(others);
+        return [...entries, ...pending];
     } catch (err) {
         console.warn('Airtable fetch failed, using cache:', err.message);
         return getCache().filter(e => e.vessel === vessel && e.date === dateStr);
@@ -92,17 +93,17 @@ export async function addEntry(entryData) {
     try {
         const entry = await createRecord(entryData);
         updateCacheEntry(entry);
-        return entry;
+        return { entry, error: null };
     } catch (err) {
         console.error('Airtable create failed:', err.message);
-        // Fallback: save locally with temp ID
+        // Fallback: save locally with temp ID so data isn't lost
         const fallback = {
             ...entryData,
             id: 'local_' + Date.now().toString(36),
             _pendingSync: true
         };
         updateCacheEntry(fallback);
-        return fallback;
+        return { entry: fallback, error: err.message };
     }
 }
 
@@ -111,7 +112,7 @@ export async function updateEntry(id, updates) {
     try {
         const entry = await airtableUpdate(id, updates);
         updateCacheEntry(entry);
-        return entry;
+        return { entry, error: null };
     } catch (err) {
         console.error('Airtable update failed:', err.message);
         const cache = getCache();
@@ -119,14 +120,19 @@ export async function updateEntry(id, updates) {
         if (idx !== -1) {
             cache[idx] = { ...cache[idx], ...updates };
             setCache(cache);
-            return cache[idx];
+            return { entry: cache[idx], error: err.message };
         }
-        return null;
+        return { entry: null, error: err.message };
     }
 }
 
 // Delete an entry
 export async function deleteEntry(id) {
+    // Local-only pending entries can be removed without an Airtable call
+    if (id.startsWith('local_')) {
+        removeCacheEntry(id);
+        return;
+    }
     try {
         await airtableDelete(id);
         removeCacheEntry(id);
