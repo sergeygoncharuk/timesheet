@@ -35,7 +35,7 @@ function getConfig() {
         fieldEnd:        saved.fieldEnd        || 'End',
         fieldActivity:   saved.fieldActivity   || 'Description',
         fieldTag:        saved.fieldTag        || 'Type',
-        fieldUserEmail:  saved.fieldUserEmail  || 'User',
+        fieldUserEmail:  saved.fieldUserEmail  || 'access_User email',
     };
 }
 
