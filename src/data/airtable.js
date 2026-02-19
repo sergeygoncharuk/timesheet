@@ -35,6 +35,7 @@ function getConfig() {
         fieldEnd:        saved.fieldEnd        || 'End',
         fieldActivity:   saved.fieldActivity   || 'Description',
         fieldTag:        saved.fieldTag        || 'Type',
+        fieldUserEmail:  saved.fieldUserEmail  || 'User',
     };
 }
 
@@ -67,8 +68,9 @@ function toAirtableFields(entry) {
         [c.fieldDate]:     entry.date || '',
         [c.fieldStart]:    entry.start || '',
         [c.fieldEnd]:      entry.end || '',
-        [c.fieldActivity]: entry.activity || '',
-        [c.fieldTag]:      entry.tag || ''
+        [c.fieldActivity]:  entry.activity || '',
+        [c.fieldTag]:       entry.tag || '',
+        [c.fieldUserEmail]: entry.userEmail || ''
     };
 }
 

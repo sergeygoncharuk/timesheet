@@ -715,7 +715,8 @@ export async function handleFormSubmit(e) {
     start: startVal,
     end: endVal,
     activity: activityVal,
-    tag: tagVal
+    tag: tagVal,
+    userEmail: getCurrentUser()?.email || ''
   };
 
   closePanel();

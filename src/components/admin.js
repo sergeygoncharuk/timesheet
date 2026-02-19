@@ -118,6 +118,10 @@ function buildAdminHTML() {
             <label style="font-size:12px;">Tag/Type column</label>
             <input type="text" id="fieldTag" placeholder="Type" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
           </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size:12px;">User email column</label>
+            <input type="text" id="fieldUserEmail" placeholder="User" class="admin-input" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px;" />
+          </div>
         </div>
 
         <div style="display:flex; gap:10px; margin-top:16px;">
@@ -694,6 +698,7 @@ function loadAirtableForm() {
   document.getElementById('fieldEnd').value = config.fieldEnd || 'End';
   document.getElementById('fieldActivity').value = config.fieldActivity || 'Description';
   document.getElementById('fieldTag').value = config.fieldTag || 'Type';
+  document.getElementById('fieldUserEmail').value = config.fieldUserEmail || 'User';
   document.getElementById('airtableStatus').textContent = '';
 }
 
@@ -712,6 +717,7 @@ function bindAirtableEvents() {
       fieldEnd:       document.getElementById('fieldEnd').value.trim() || 'End',
       fieldActivity:  document.getElementById('fieldActivity').value.trim() || 'Description',
       fieldTag:       document.getElementById('fieldTag').value.trim() || 'Type',
+      fieldUserEmail: document.getElementById('fieldUserEmail').value.trim() || 'User',
     };
     saveAirtableConfig(config);
     const status = document.getElementById('airtableStatus');
