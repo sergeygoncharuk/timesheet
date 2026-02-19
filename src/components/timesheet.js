@@ -10,6 +10,11 @@ import {
   getDateOffset, setDateOffset
 } from '../data/store.js';
 
+function isViewOnly() {
+  const role = getCurrentUser()?.role;
+  return role === 'Dispatcher';
+}
+
 let currentVessel = getVessels()[0];
 let currentDateOffset = 0;
 let currentDateStr = getDateStr(0);
@@ -103,12 +108,12 @@ function buildTimesheetHTML() {
 
     <div class="timesheet-header">
       <h2 class="timesheet-title" id="timesheetTitle">Timesheet on ${formatDateDisplay(currentDateStr)}</h2>
-      <button class="add-btn" id="addEntryBtn">
+      ${isViewOnly() ? '' : `<button class="add-btn" id="addEntryBtn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         Add
-      </button>
+      </button>`}
     </div>
 
     <div class="progress-bar-container" id="progressBarContainer" style="display:none;">
@@ -147,7 +152,7 @@ function buildTimesheetHTML() {
             <th>Duration</th>
             <th>Activity</th>
             <th>Tag</th>
-            <th></th>
+            ${isViewOnly() ? '' : '<th></th>'}
           </tr>
         </thead>
         <tbody id="entriesBody"></tbody>
@@ -158,7 +163,7 @@ function buildTimesheetHTML() {
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
         <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
-      <p>No entries for this day. Click <strong>+ Add</strong> to get started.</p>
+      <p>${isViewOnly() ? 'No entries for this day.' : 'No entries for this day. Click <strong>+ Add</strong> to get started.'}</p>
     </div>
   `;
 }
@@ -272,8 +277,9 @@ export async function renderEntries() {
     const tagColor = tagObj ? tagObj.color : '#cbd5e0';
 
     const pendingStyle = entry._pendingSync ? ' style="opacity:0.6;" title="Not saved to Airtable"' : '';
+    const viewOnly = isViewOnly();
     rowsHTML += `
-      <tr class="entry-row" data-id="${entry.id}" style="cursor: pointer;"${pendingStyle ? pendingStyle : ''}>
+      <tr class="entry-row" data-id="${entry.id}" style="cursor: ${viewOnly ? 'default' : 'pointer'};"${pendingStyle ? pendingStyle : ''}>
         <td>${formatTime(entry.start)}</td>
         <td>${formatTime(entry.end)}</td>
         <td>${formatDuration(dur)}</td>
@@ -283,7 +289,7 @@ export async function renderEntries() {
             ${entry.tag}
           </span>
         </td>
-        <td>
+        ${viewOnly ? '' : `<td>
           <div class="entry-actions">
             <button class="entry-action-btn edit" data-id="${entry.id}" title="Edit">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -297,7 +303,7 @@ export async function renderEntries() {
               </svg>
             </button>
           </div>
-        </td>
+        </td>`}
       </tr>`;
   });
   tbody.innerHTML = rowsHTML;
@@ -319,12 +325,14 @@ export async function renderEntries() {
 
   if (inlineDashOpen) renderInlineDashboard();
 
-  // Double-click to edit
+  // Double-click to edit (not for view-only)
+  if (!isViewOnly()) {
   tbody.querySelectorAll('.entry-row').forEach(row => {
     row.addEventListener('dblclick', () => {
       openEditForm(row.dataset.id, entries);
     });
   });
+  }
   tbody.querySelectorAll('.delete').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (btn.classList.contains('confirm-delete')) {
@@ -367,7 +375,8 @@ function bindTimesheetEvents() {
     });
   });
 
-  document.getElementById('addEntryBtn').addEventListener('click', openAddForm);
+  const addBtn = document.getElementById('addEntryBtn');
+  if (addBtn) addBtn.addEventListener('click', openAddForm);
 
   document.getElementById('progressExpandBtn').addEventListener('click', (e) => {
     e.stopPropagation();
