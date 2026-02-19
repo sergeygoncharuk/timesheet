@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
         const data = await findRes.json();
         if (!data.records || data.records.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'This email is not registered. Please contact your administrator.' });
         }
 
         const userRecord = data.records[0];
