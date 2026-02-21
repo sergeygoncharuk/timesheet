@@ -51,7 +51,7 @@ function buildWeatherHTML() {
       <div class="chart-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3>Weather Forecast (Buoyweather)</h3>
-            <a href="https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
+            <a href="https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">Open source &rarr;</a>
         </div>
         <div id="weatherScreenshot-kamsar" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
           <p style="color:var(--text-muted);">Loading forecast...</p>
@@ -63,7 +63,7 @@ function buildWeatherHTML() {
       <div class="chart-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3>Weather Forecast (Buoyweather)</h3>
-            <a href="https://www.buoyweather.com/forecast/marine-weather/@${CONAKRY_LAT},${CONAKRY_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
+            <a href="https://www.buoyweather.com/forecast/marine-weather/@${CONAKRY_LAT},${CONAKRY_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">Open source &rarr;</a>
         </div>
         <div id="weatherScreenshot-conakry" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
           <p style="color:var(--text-muted);">Loading forecast...</p>
