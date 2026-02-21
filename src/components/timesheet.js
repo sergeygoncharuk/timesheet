@@ -264,9 +264,8 @@ function updateSubmitButton() {
   const startOk = isValidHHMM(startVal);
   const endOk = isValidHHMM(endVal);
   const timeOrder = startVal < endVal;
-  const tagOk = getTags().some(t => t.name.toLowerCase() === tagVal.toLowerCase());
 
-  const valid = allFilled && startOk && endOk && timeOrder && tagOk;
+  const valid = allFilled && startOk && endOk && timeOrder;
   btn.disabled = !valid;
   btn.style.opacity = valid ? '1' : '0.5';
   btn.style.cursor = valid ? 'pointer' : 'not-allowed';
