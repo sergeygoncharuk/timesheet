@@ -239,12 +239,13 @@ function renderContent() {
 
   if (currentLocation === 'Conakry') {
     const tides = parseMakeShiftData();
-    const apiKey = import.meta.env.VITE_SCREENSHOTMACHINE_API_KEY;
+    const webhookUrl = import.meta.env.VITE_N8N_TIDE_WEBHOOK_URL;
 
     let screenshotHTML = '';
-    if (apiKey) {
-      const tideUrl = encodeURIComponent(CONAKRY_TIDE_URL);
-      const screenshotUrl = `https://api.screenshotmachine.com?key=${apiKey}&url=${tideUrl}&cacheLimit=0&dimension=1024x768&selector=.content-body`;
+    if (webhookUrl) {
+      // Add cache-busting timestamp to force refresh
+      const timestamp = Date.now();
+      const screenshotUrl = `${webhookUrl}?t=${timestamp}`;
       screenshotHTML = `
         <div style="margin-bottom: 20px;">
           <h4 style="margin-bottom: 8px; font-size: 16px; color: var(--text);">Tide Conakry</h4>
@@ -254,7 +255,7 @@ function renderContent() {
     } else {
       screenshotHTML = `
         <div style="margin-bottom: 20px;">
-          <p style="color:var(--danger);padding:20px;">Screenshot Machine API key not configured.</p>
+          <p style="color:var(--danger);padding:20px;">n8n Tide Webhook URL not configured.</p>
         </div>
       `;
     }
