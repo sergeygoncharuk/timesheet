@@ -348,10 +348,9 @@ export async function fetchTagsFromAirtable() {
     let offset = null;
 
     do {
-        // Sort by Name field to match Airtable view order
+        // Preserve exact order from Airtable by sorting by Order field if it exists,
+        // otherwise use creation time to maintain consistent ordering
         const params = new URLSearchParams();
-        params.append('sort[0][field]', 'Name');
-        params.append('sort[0][direction]', 'asc');
         if (offset) params.append('offset', offset);
 
         const url = `${getTagsTableUrl()}?${params.toString()}`;
@@ -361,15 +360,31 @@ export async function fetchTagsFromAirtable() {
             throw new Error(err.error?.message || 'Failed to fetch tags from Airtable');
         }
         const data = await res.json();
-        allRecords = allRecords.concat(data.records.map(r => ({
+        const records = data.records.map(r => ({
             airtableId: r.id,
             name: r.fields.Name || '',
-            color: r.fields.Color || '#cbd5e0'
-        })));
+            color: r.fields.Color || '#cbd5e0',
+            order: r.fields.Order !== undefined ? r.fields.Order : null,
+            createdTime: r.createdTime
+        }));
+        allRecords = allRecords.concat(records);
         offset = data.offset || null;
     } while (offset);
 
-    return allRecords;
+    // Sort by Order field if it exists, otherwise by creation time
+    const hasOrderField = allRecords.some(r => r.order !== null);
+    if (hasOrderField) {
+        allRecords.sort((a, b) => (a.order || 0) - (b.order || 0));
+    } else {
+        allRecords.sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
+    }
+
+    // Remove temporary sorting fields
+    return allRecords.map(r => ({
+        airtableId: r.airtableId,
+        name: r.name,
+        color: r.color
+    }));
 }
 
 export async function pushTagToAirtable(tag) {
