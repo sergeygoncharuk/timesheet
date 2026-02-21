@@ -494,17 +494,23 @@ body {
 
 .gap-row td {
   text-align: center;
-  padding: 6px 20px;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--text-muted);
-  border-bottom: 1px dashed #e2e8f0;
-  background: #fafbfc;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  background: #fef3c7;
   pointer-events: none;
+  box-shadow: 0 1px 3px rgba(252, 211, 77, 0.2);
+}
+
+.gap-row td::before {
+  content: "⚠️ ";
+  margin-right: 4px;
 }
 
 .entries-table tr.gap-row:hover td {
-  background: #fafbfc;
+  background: #fef3c7;
 }
 
 .entry-tag {
