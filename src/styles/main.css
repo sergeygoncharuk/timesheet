@@ -137,23 +137,6 @@ body {
   min-width: 180px;
 }
 
-.hamburger-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-secondary);
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-}
-
-.hamburger-btn:hover {
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
 .app-logo {
   width: 32px;
   height: 32px;
