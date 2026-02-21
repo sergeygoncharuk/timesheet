@@ -184,7 +184,7 @@ function buildTidesHTML() {
     <h2 style="font-size:24px;font-weight:700;margin-bottom:20px;color:var(--text);">Tide Schedule</h2>
 
     <div class="location-toggle" id="locationToggle">
-      <button class="location-btn active" data-location="Conakry">Conakry (Real)</button>
+      <button class="location-btn active" data-location="Conakry">Conakry</button>
       <button class="location-btn" data-location="Kamsar">Kamsar (Simulated)</button>
     </div>
 
@@ -263,7 +263,6 @@ function renderContent() {
     container.innerHTML = `
             <div class="chart-card">
                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3>Conakry Tides (Feb - Mar 2026)</h3>
                     <a href="${CONAKRY_TIDE_URL}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">Open source &rarr;</a>
                 </div>
 
