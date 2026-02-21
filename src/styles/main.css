@@ -154,6 +154,12 @@ body {
   color: var(--primary);
 }
 
+.app-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
 .app-title {
   font-size: 18px;
   font-weight: 700;
@@ -1054,6 +1060,11 @@ body {
 
   .nav-right {
     min-width: auto;
+  }
+
+  .app-logo {
+    width: 28px;
+    height: 28px;
   }
 
   .app-title {
