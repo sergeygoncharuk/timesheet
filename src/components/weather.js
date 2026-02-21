@@ -47,14 +47,16 @@ function buildWeatherHTML() {
 
     <div class="chart-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3>Buoyweather (Kamsar)</h3>
-          <a href="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">Open in new tab &rarr;</a>
+          <h3>Buoyweather Forecast (Kamsar)</h3>
+          <a href="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
       </div>
-      <iframe 
-        src="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91" 
-        style="width:100%; height:800px; border:none; border-radius:8px; background:#ffffff;"
-        title="Buoyweather Forecast"
-      ></iframe>
+      <div style="width:100%; height:600px; overflow:hidden; border-radius:8px; background:#ffffff; position:relative;">
+        <iframe
+          src="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91"
+          style="width:200%; height:1600px; border:none; transform:scale(0.7) translateX(-25%) translateY(-35%); transform-origin:top left;"
+          title="Buoyweather Forecast"
+        ></iframe>
+      </div>
     </div>
 
     <div class="chart-card">
