@@ -3,12 +3,25 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
-let hourlyChart = null;
-let weeklyChart = null;
+let hourlyCharts = {
+    kamsar: null,
+    conakry: null
+};
+let weeklyCharts = {
+    kamsar: null,
+    conakry: null
+};
+let currentLocation = 'kamsar'; // Default location
 
 const KAMSAR_LAT = 10.51;
 const KAMSAR_LON = -14.91;
-const API_URL = `https://marine-api.open-meteo.com/v1/marine?latitude=${KAMSAR_LAT}&longitude=${KAMSAR_LON}&hourly=wave_height,swell_wave_height,wind_speed_10m,wave_direction,wind_direction_10m&wind_speed_unit=kn&timezone=GMT`;
+
+const CONAKRY_LAT = 9.60;
+const CONAKRY_LON = -13.99;
+
+function getAPIUrl(lat, lon) {
+    return `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,swell_wave_height,wind_speed_10m,wave_direction,wind_direction_10m&wind_speed_unit=kn&timezone=GMT`;
+}
 
 export function initWeather() {
     console.log('initWeather START'); // DEBUG
@@ -33,7 +46,7 @@ function buildWeatherHTML() {
     return `
     <div class="weather-header">
       <div>
-        <div class="weather-location">Kamsar (10.51°N, 14.91°W)</div>
+        <div class="weather-location">Marine Weather Forecast</div>
         <div class="weather-location-sub">Live Marine Data (Open-Meteo)</div>
       </div>
       <button class="update-btn" id="weatherUpdateBtn">
@@ -45,41 +58,88 @@ function buildWeatherHTML() {
       </button>
     </div>
 
-    <div class="chart-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3>Weather Forecast (Buoyweather)</h3>
-          <a href="https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
+    <div class="weather-tabs">
+      <button class="weather-tab active" data-location="kamsar">Kamsar</button>
+      <button class="weather-tab" data-location="conakry">Conakry</button>
+    </div>
+
+    <div class="weather-content" id="weather-kamsar">
+      <div class="chart-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3>Weather Forecast (Buoyweather)</h3>
+            <a href="https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
+        </div>
+        <div id="weatherScreenshot-kamsar" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
+          <p style="color:var(--text-muted);">Loading forecast...</p>
+        </div>
       </div>
-      <div id="weatherScreenshot" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
-        <p style="color:var(--text-muted);">Loading forecast...</p>
+
+      <div class="chart-card">
+        <h3>Sea State (Next 24 Hours)</h3>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+              <span style="width:12px;height:12px;background:#4285F4;border-radius:3px;"></span>
+              <span style="font-size:13px;color:var(--text-muted);">Wave Height (m)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+              <span style="width:12px;height:12px;background:#34A853;border-radius:3px;"></span>
+              <span style="font-size:13px;color:var(--text-muted);">Swell (m)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="hourlyMarineChart-kamsar"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Wind Forecast (7 Days)</h3>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="width:12px;height:12px;background:#EA4335;border-radius:3px;display:inline-block;"></span>
+          <span style="font-size:13px;color:var(--text-muted);">Max Wind Speed (knots)</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="weeklyWindChart-kamsar"></canvas>
+        </div>
       </div>
     </div>
 
-    <div class="chart-card">
-      <h3>Sea State (Next 24 Hours)</h3>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:4px;">
-            <span style="width:12px;height:12px;background:#4285F4;border-radius:3px;"></span>
-            <span style="font-size:13px;color:var(--text-muted);">Wave Height (m)</span>
+    <div class="weather-content" id="weather-conakry" style="display:none;">
+      <div class="chart-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3>Weather Forecast (Buoyweather)</h3>
+            <a href="https://www.buoyweather.com/forecast/marine-weather/@${CONAKRY_LAT},${CONAKRY_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-            <span style="width:12px;height:12px;background:#34A853;border-radius:3px;"></span>
-            <span style="font-size:13px;color:var(--text-muted);">Swell (m)</span>
+        <div id="weatherScreenshot-conakry" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
+          <p style="color:var(--text-muted);">Loading forecast...</p>
         </div>
       </div>
-      <div class="chart-container">
-        <canvas id="hourlyMarineChart"></canvas>
-      </div>
-    </div>
 
-    <div class="chart-card">
-      <h3>Wind Forecast (7 Days)</h3>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="width:12px;height:12px;background:#EA4335;border-radius:3px;display:inline-block;"></span>
-        <span style="font-size:13px;color:var(--text-muted);">Max Wind Speed (knots)</span>
+      <div class="chart-card">
+        <h3>Sea State (Next 24 Hours)</h3>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+              <span style="width:12px;height:12px;background:#4285F4;border-radius:3px;"></span>
+              <span style="font-size:13px;color:var(--text-muted);">Wave Height (m)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+              <span style="width:12px;height:12px;background:#34A853;border-radius:3px;"></span>
+              <span style="font-size:13px;color:var(--text-muted);">Swell (m)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="hourlyMarineChart-conakry"></canvas>
+        </div>
       </div>
-      <div class="chart-container">
-        <canvas id="weeklyWindChart"></canvas>
+
+      <div class="chart-card">
+        <h3>Wind Forecast (7 Days)</h3>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="width:12px;height:12px;background:#EA4335;border-radius:3px;display:inline-block;"></span>
+          <span style="font-size:13px;color:var(--text-muted);">Max Wind Speed (knots)</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="weeklyWindChart-conakry"></canvas>
+        </div>
       </div>
     </div>
   `;
@@ -89,29 +149,52 @@ function bindWeatherEvents() {
     document.getElementById('weatherUpdateBtn').addEventListener('click', () => {
         const btn = document.getElementById('weatherUpdateBtn');
         btn.classList.add('loading');
-        fetchAndRenderWeather().finally(() => {
+        fetchAndRenderWeather(currentLocation).finally(() => {
             btn.classList.remove('loading');
+        });
+    });
+
+    // Tab switching
+    document.querySelectorAll('.weather-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const location = tab.dataset.location;
+            currentLocation = location;
+
+            // Update active tab
+            document.querySelectorAll('.weather-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            // Show selected content
+            document.querySelectorAll('.weather-content').forEach(c => c.style.display = 'none');
+            document.getElementById(`weather-${location}`).style.display = 'block';
+
+            // Fetch data if not loaded yet
+            fetchAndRenderWeather(location);
         });
     });
 }
 
-async function fetchAndRenderWeather() {
+async function fetchAndRenderWeather(location = 'kamsar') {
     try {
-        const response = await fetch(API_URL);
+        const lat = location === 'kamsar' ? KAMSAR_LAT : CONAKRY_LAT;
+        const lon = location === 'kamsar' ? KAMSAR_LON : CONAKRY_LON;
+        const apiUrl = getAPIUrl(lat, lon);
+
+        const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('Weather data fetch failed');
         const data = await response.json();
 
-        renderWeatherScreenshot();
-        renderHourlyMarineChart(data.hourly);
-        renderWeeklyWindChart(data.hourly);
+        renderWeatherScreenshot(location, lat, lon);
+        renderHourlyMarineChart(data.hourly, location);
+        renderWeeklyWindChart(data.hourly, location);
     } catch (error) {
         console.error('Failed to load weather data:', error);
         // Fallback or error UI could go here
     }
 }
 
-function renderWeatherScreenshot() {
-    const container = document.getElementById('weatherScreenshot');
+function renderWeatherScreenshot(location, lat, lon) {
+    const container = document.getElementById(`weatherScreenshot-${location}`);
     if (!container) return;
 
     const apiKey = import.meta.env.VITE_SCREENSHOTMACHINE_API_KEY;
@@ -121,7 +204,7 @@ function renderWeatherScreenshot() {
         return;
     }
 
-    const buoyweatherUrl = `https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}`;
+    const buoyweatherUrl = `https://www.buoyweather.com/forecast/marine-weather/@${lat},${lon}`;
     const encodedUrl = encodeURIComponent(buoyweatherUrl);
 
     const screenshotUrl = `https://api.screenshotmachine.com?key=${apiKey}&url=${encodedUrl}&dimension=3000x3000&cookies=access_token%3Deefd5e64292369c3aeb0bc73f9414e6808208c99&selector=.wind-wave&cacheLimit=0`;
@@ -137,17 +220,17 @@ function renderWeatherScreenshot() {
     `;
 }
 
-function renderHourlyMarineChart(hourly) {
-    const canvas = document.getElementById('hourlyMarineChart');
+function renderHourlyMarineChart(hourly, location) {
+    const canvas = document.getElementById(`hourlyMarineChart-${location}`);
     if (!canvas) return;
-    if (hourlyChart) hourlyChart.destroy();
+    if (hourlyCharts[location]) hourlyCharts[location].destroy();
 
     // Take next 24 hours
     const labels = hourly.time.slice(0, 24).map(t => t.slice(11, 16)); // HH:MM
     const waveHeight = hourly.wave_height.slice(0, 24);
     const swellHeight = hourly.swell_wave_height.slice(0, 24);
 
-    hourlyChart = new Chart(canvas, {
+    hourlyCharts[location] = new Chart(canvas, {
         type: 'line',
         data: {
             labels,
@@ -191,10 +274,10 @@ function renderHourlyMarineChart(hourly) {
     });
 }
 
-function renderWeeklyWindChart(hourly) {
-    const canvas = document.getElementById('weeklyWindChart');
+function renderWeeklyWindChart(hourly, location) {
+    const canvas = document.getElementById(`weeklyWindChart-${location}`);
     if (!canvas) return;
-    if (weeklyChart) weeklyChart.destroy();
+    if (weeklyCharts[location]) weeklyCharts[location].destroy();
 
     // Aggregate hourly wind to daily max
     const dailyLabels = [];
@@ -215,7 +298,7 @@ function renderWeeklyWindChart(hourly) {
         dailyLabels.push(new Date(dateStr).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }));
     }
 
-    weeklyChart = new Chart(canvas, {
+    weeklyCharts[location] = new Chart(canvas, {
         type: 'bar',
         data: {
             labels: dailyLabels,

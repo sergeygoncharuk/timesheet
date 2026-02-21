@@ -875,6 +875,42 @@ body {
   margin-top: 2px;
 }
 
+.weather-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0;
+}
+
+.weather-tab {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all var(--transition);
+}
+
+.weather-tab:hover {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+.weather-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.weather-content {
+  display: block;
+}
+
 .forecast-table {
   width: 100%;
   border-collapse: collapse;
