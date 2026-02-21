@@ -1,16 +1,4 @@
 // Weather Tab Component
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
-
-let hourlyCharts = {
-    kamsar: null,
-    conakry: null
-};
-let weeklyCharts = {
-    kamsar: null,
-    conakry: null
-};
 let currentLocation = 'kamsar'; // Default location
 
 const KAMSAR_LAT = 10.51;
@@ -18,10 +6,6 @@ const KAMSAR_LON = -14.91;
 
 const CONAKRY_LAT = 9.60;
 const CONAKRY_LON = -13.99;
-
-function getAPIUrl(lat, lon) {
-    return `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,swell_wave_height,wind_speed_10m,wave_direction,wind_direction_10m&wind_speed_unit=kn&timezone=GMT`;
-}
 
 export function initWeather() {
     console.log('initWeather START'); // DEBUG
@@ -73,34 +57,6 @@ function buildWeatherHTML() {
           <p style="color:var(--text-muted);">Loading forecast...</p>
         </div>
       </div>
-
-      <div class="chart-card">
-        <h3>Sea State (Next 24 Hours)</h3>
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:4px;">
-              <span style="width:12px;height:12px;background:#4285F4;border-radius:3px;"></span>
-              <span style="font-size:13px;color:var(--text-muted);">Wave Height (m)</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;">
-              <span style="width:12px;height:12px;background:#34A853;border-radius:3px;"></span>
-              <span style="font-size:13px;color:var(--text-muted);">Swell (m)</span>
-          </div>
-        </div>
-        <div class="chart-container">
-          <canvas id="hourlyMarineChart-kamsar"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h3>Wind Forecast (7 Days)</h3>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <span style="width:12px;height:12px;background:#EA4335;border-radius:3px;display:inline-block;"></span>
-          <span style="font-size:13px;color:var(--text-muted);">Max Wind Speed (knots)</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="weeklyWindChart-kamsar"></canvas>
-        </div>
-      </div>
     </div>
 
     <div class="weather-content" id="weather-conakry" style="display:none;">
@@ -111,34 +67,6 @@ function buildWeatherHTML() {
         </div>
         <div id="weatherScreenshot-conakry" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
           <p style="color:var(--text-muted);">Loading forecast...</p>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h3>Sea State (Next 24 Hours)</h3>
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:4px;">
-              <span style="width:12px;height:12px;background:#4285F4;border-radius:3px;"></span>
-              <span style="font-size:13px;color:var(--text-muted);">Wave Height (m)</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;">
-              <span style="width:12px;height:12px;background:#34A853;border-radius:3px;"></span>
-              <span style="font-size:13px;color:var(--text-muted);">Swell (m)</span>
-          </div>
-        </div>
-        <div class="chart-container">
-          <canvas id="hourlyMarineChart-conakry"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h3>Wind Forecast (7 Days)</h3>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <span style="width:12px;height:12px;background:#EA4335;border-radius:3px;display:inline-block;"></span>
-          <span style="font-size:13px;color:var(--text-muted);">Max Wind Speed (knots)</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="weeklyWindChart-conakry"></canvas>
         </div>
       </div>
     </div>
@@ -178,15 +106,8 @@ async function fetchAndRenderWeather(location = 'kamsar') {
     try {
         const lat = location === 'kamsar' ? KAMSAR_LAT : CONAKRY_LAT;
         const lon = location === 'kamsar' ? KAMSAR_LON : CONAKRY_LON;
-        const apiUrl = getAPIUrl(lat, lon);
-
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('Weather data fetch failed');
-        const data = await response.json();
 
         renderWeatherScreenshot(location, lat, lon);
-        renderHourlyMarineChart(data.hourly, location);
-        renderWeeklyWindChart(data.hourly, location);
     } catch (error) {
         console.error('Failed to load weather data:', error);
         // Fallback or error UI could go here
@@ -218,119 +139,6 @@ function renderWeatherScreenshot(location, lat, lon) {
             onerror="this.parentElement.innerHTML='<p style=\\'color:var(--danger);padding:20px;\\'>Failed to load weather forecast screenshot. Please try again later.</p>';"
         />
     `;
-}
-
-function renderHourlyMarineChart(hourly, location) {
-    const canvas = document.getElementById(`hourlyMarineChart-${location}`);
-    if (!canvas) return;
-    if (hourlyCharts[location]) hourlyCharts[location].destroy();
-
-    // Take next 24 hours
-    const labels = hourly.time.slice(0, 24).map(t => t.slice(11, 16)); // HH:MM
-    const waveHeight = hourly.wave_height.slice(0, 24);
-    const swellHeight = hourly.swell_wave_height.slice(0, 24);
-
-    hourlyCharts[location] = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: 'Wave Height (m)',
-                    data: waveHeight,
-                    borderColor: '#4285F4',
-                    backgroundColor: 'rgba(66, 133, 244, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'Swell (m)',
-                    data: swellHeight,
-                    borderColor: '#34A853',
-                    backgroundColor: 'rgba(52, 168, 83, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: { mode: 'index', intersect: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#F0F0F0' },
-                    title: { display: true, text: 'Meters' }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-}
-
-function renderWeeklyWindChart(hourly, location) {
-    const canvas = document.getElementById(`weeklyWindChart-${location}`);
-    if (!canvas) return;
-    if (weeklyCharts[location]) weeklyCharts[location].destroy();
-
-    // Aggregate hourly wind to daily max
-    const dailyLabels = [];
-    const dailyMaxWind = [];
-
-    // Process 7 days (7 * 24 = 168 hours)
-    for (let i = 0; i < 7; i++) {
-        const start = i * 24;
-        const end = start + 24;
-        const daySlice = hourly.wind_speed_10m.slice(start, end);
-        if (daySlice.length === 0) break;
-
-        const maxWind = Math.max(...daySlice);
-        dailyMaxWind.push(maxWind);
-
-        // Date format
-        const dateStr = hourly.time[start].slice(0, 10);
-        dailyLabels.push(new Date(dateStr).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }));
-    }
-
-    weeklyCharts[location] = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: dailyLabels,
-            datasets: [{
-                label: 'Max Wind (kn)',
-                data: dailyMaxWind,
-                backgroundColor: '#EA4335',
-                borderRadius: 4,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => `${ctx.parsed.y} knots`
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#F0F0F0' },
-                    title: { display: true, text: 'Knots' }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
 }
 
 
