@@ -239,17 +239,34 @@ function renderContent() {
 
   if (currentLocation === 'Conakry') {
     const tides = parseMakeShiftData();
+    const apiKey = import.meta.env.VITE_SCREENSHOTMACHINE_API_KEY;
+
+    let screenshotHTML = '';
+    if (apiKey) {
+      const tideUrl = encodeURIComponent(CONAKRY_TIDE_URL);
+      const screenshotUrl = `https://api.screenshotmachine.com?key=${apiKey}&url=${tideUrl}&cacheLimit=0&dimension=1024x768&selector=.content-body`;
+      screenshotHTML = `
+        <div style="margin-bottom: 20px;">
+          <h4 style="margin-bottom: 8px; font-size: 16px; color: var(--text);">Tide Conakry</h4>
+          <img src="${screenshotUrl}" alt="Tide Conakry" style="width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--danger);padding:20px;\\'>Failed to load tide forecast screenshot.</p>';">
+        </div>
+      `;
+    } else {
+      screenshotHTML = `
+        <div style="margin-bottom: 20px;">
+          <p style="color:var(--danger);padding:20px;">Screenshot Machine API key not configured.</p>
+        </div>
+      `;
+    }
+
     container.innerHTML = `
             <div class="chart-card">
                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h3>Conakry Tides (Feb - Mar 2026)</h3>
                     <a href="${CONAKRY_TIDE_URL}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">Open source &rarr;</a>
                 </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <h4 style="margin-bottom: 8px; font-size: 16px; color: var(--text);">Tide Conakry</h4>
-                    <img src="https://www.tide-forecast.com/system/charts-png/Conakry-Guinea/tides.png" alt="Tide Conakry" style="width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0;">
-                </div>
+
+                ${screenshotHTML}
 
                 <div class="tide-table" style="max-height: 600px; overflow-y: auto;">
                   <table>
