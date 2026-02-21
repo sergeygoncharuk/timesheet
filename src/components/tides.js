@@ -185,7 +185,7 @@ function buildTidesHTML() {
 
     <div class="location-toggle" id="locationToggle">
       <button class="location-btn active" data-location="Conakry">Conakry</button>
-      <button class="location-btn" data-location="Kamsar">Kamsar (Simulated)</button>
+      <button class="location-btn" data-location="Kamsar">Kamsar</button>
     </div>
 
     <div id="tidesContent"></div>
@@ -239,7 +239,7 @@ function renderContent() {
 
   if (currentLocation === 'Conakry') {
     const tides = parseMakeShiftData();
-    const webhookUrl = import.meta.env.VITE_N8N_TIDE_WEBHOOK_URL;
+    const webhookUrl = import.meta.env.VITE_N8N_TIDE_CONAKRY_URL;
 
     let screenshotHTML = '';
     if (webhookUrl) {
@@ -255,7 +255,7 @@ function renderContent() {
     } else {
       screenshotHTML = `
         <div style="margin-bottom: 20px;">
-          <p style="color:var(--danger);padding:20px;">n8n Tide Webhook URL not configured. Please set VITE_N8N_TIDE_WEBHOOK_URL in your .env file.</p>
+          <p style="color:var(--danger);padding:20px;">n8n Tide Conakry Webhook URL not configured. Please set VITE_N8N_TIDE_CONAKRY_URL in your .env file.</p>
         </div>
       `;
     }
@@ -293,31 +293,30 @@ function renderContent() {
             </div>
         `;
   } else {
-    // Kamsar - Simulated
-    const tides = generateTideData('Kamsar');
+    // Kamsar
+    const webhookUrl = import.meta.env.VITE_N8N_TIDE_KAMSAR_URL;
+
+    let chartHTML = '';
+    if (webhookUrl) {
+      // Add cache-busting timestamp to force refresh
+      const timestamp = Date.now();
+      const chartUrl = `${webhookUrl}?t=${timestamp}`;
+      chartHTML = `
+        <div style="margin-bottom: 20px;">
+          <img src="${chartUrl}" alt="Tide Kamsar Chart" style="width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.parentElement.innerHTML='<p style=\\'color:var(--danger);padding:20px;\\'>Failed to load tide chart.</p>';">
+        </div>
+      `;
+    } else {
+      chartHTML = `
+        <div style="margin-bottom: 20px;">
+          <p style="color:var(--danger);padding:20px;">n8n Tide Kamsar Webhook URL not configured. Please set VITE_N8N_TIDE_KAMSAR_URL in your .env file.</p>
+        </div>
+      `;
+    }
+
     container.innerHTML = `
             <div class="chart-card">
-                <h3>Kamsar Tides (Simulated Data)</h3>
-                <div class="tide-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>DateTime</th>
-                        <th>Height (m)</th>
-                        <th>Type</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                        ${tides.map(t => `
-                            <tr>
-                              <td>${t.dateTime}</td>
-                              <td>${t.height.toFixed(2)}</td>
-                              <td><span class="tide-type ${t.type.toLowerCase()}">${t.type}</span></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                  </table>
-                </div>
+                ${chartHTML}
             </div>
         `;
   }
