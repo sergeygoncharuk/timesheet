@@ -64,12 +64,66 @@ function populateVesselSelect() {
 }
 
 function populateTagSelect() {
-  const sel = document.getElementById('entryTag');
-  if (!sel) return;
-  const currentVal = sel.value;
-  sel.innerHTML = '<option value="">Select tag...</option>' +
-    getTags().map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-  if (currentVal) sel.value = currentVal;
+  const input = document.getElementById('entryTag');
+  const dropdown = document.getElementById('tagDropdown');
+  if (!input || !dropdown) return;
+
+  let selectedTag = '';
+  let allTags = getTags();
+
+  // Setup autocomplete
+  function showDropdown(filter = '') {
+    const filtered = allTags.filter(t =>
+      t.name.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+      dropdown.innerHTML = '<div class="autocomplete-empty">No tags found</div>';
+    } else {
+      dropdown.innerHTML = filtered.map(t => `
+        <div class="autocomplete-item" data-tag="${t.name}">
+          <div class="autocomplete-color" style="background-color: ${t.color}"></div>
+          <span>${t.name}</span>
+        </div>
+      `).join('');
+
+      // Add click handlers
+      dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          selectedTag = item.dataset.tag;
+          input.value = selectedTag;
+          dropdown.classList.remove('show');
+        });
+      });
+    }
+
+    dropdown.classList.add('show');
+  }
+
+  function hideDropdown() {
+    setTimeout(() => dropdown.classList.remove('show'), 200);
+  }
+
+  // Input events
+  input.addEventListener('input', (e) => {
+    selectedTag = '';
+    showDropdown(e.target.value);
+  });
+
+  input.addEventListener('focus', (e) => {
+    showDropdown(e.target.value);
+  });
+
+  input.addEventListener('blur', () => {
+    hideDropdown();
+  });
+
+  // Keyboard navigation
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdown.classList.remove('show');
+    }
+  });
 }
 
 export function initTimesheet() {
@@ -204,14 +258,15 @@ function updateSubmitButton() {
   const startVal = document.getElementById('entryStart').value.trim();
   const endVal = document.getElementById('entryEnd').value.trim();
   const activityVal = document.getElementById('entryActivity').value.trim();
-  const tagVal = document.getElementById('entryTag').value;
+  const tagVal = document.getElementById('entryTag').value.trim();
 
   const allFilled = startVal && endVal && activityVal && tagVal;
   const startOk = isValidHHMM(startVal);
   const endOk = isValidHHMM(endVal);
   const timeOrder = startVal < endVal;
+  const tagOk = getTags().some(t => t.name === tagVal);
 
-  const valid = allFilled && startOk && endOk && timeOrder;
+  const valid = allFilled && startOk && endOk && timeOrder && tagOk;
   btn.disabled = !valid;
   btn.style.opacity = valid ? '1' : '0.5';
   btn.style.cursor = valid ? 'pointer' : 'not-allowed';
@@ -585,7 +640,7 @@ function attachFormValidationListeners() {
 
   // Activity and tag just update the submit button
   activityInput.oninput = updateSubmitButton;
-  tagSelect.onchange = updateSubmitButton;
+  tagSelect.oninput = updateSubmitButton;
 }
 
 async function openAddForm() {
