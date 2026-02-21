@@ -164,8 +164,15 @@ export function calcDuration(startHhmm, endHhmm) {
 }
 
 export function formatDuration(minutes) {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
+    let h = Math.floor(minutes / 60);
+    let m = minutes % 60;
+
+    // Round 23h 59m to 24h
+    if (h === 23 && m === 59) {
+        h = 24;
+        m = 0;
+    }
+
     if (h === 0) return `${m}m`;
     if (m === 0) return `${h}h`;
     return `${h}h ${m}m`;
