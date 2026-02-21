@@ -48,14 +48,10 @@ function buildWeatherHTML() {
     <div class="chart-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3>Weather Forecast (Buoyweather)</h3>
-          <a href="https://www.buoyweather.com/forecast/marine-weather/@10.51,-14.91" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
+          <a href="https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
       </div>
-      <div style="width:100%; height:650px; overflow:hidden; border-radius:8px; background:#ffffff; position:relative; border:1px solid #e2e8f0;">
-        <iframe
-          src="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91"
-          style="width:200%; height:1800px; border:none; transform:scale(0.65) translateX(-27%) translateY(-30%); transform-origin:top left;"
-          title="Buoyweather Forecast"
-        ></iframe>
+      <div id="weatherScreenshot" style="min-height:400px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f7fafc;">
+        <p style="color:var(--text-muted);">Loading forecast...</p>
       </div>
     </div>
 
@@ -105,12 +101,40 @@ async function fetchAndRenderWeather() {
         if (!response.ok) throw new Error('Weather data fetch failed');
         const data = await response.json();
 
+        renderWeatherScreenshot();
         renderHourlyMarineChart(data.hourly);
         renderWeeklyWindChart(data.hourly);
     } catch (error) {
         console.error('Failed to load weather data:', error);
         // Fallback or error UI could go here
     }
+}
+
+function renderWeatherScreenshot() {
+    const container = document.getElementById('weatherScreenshot');
+    if (!container) return;
+
+    const apiKey = import.meta.env.VITE_SCREENSHOTMACHINE_API_KEY;
+
+    if (!apiKey) {
+        container.innerHTML = '<p style="color:var(--danger);padding:20px;">Screenshot Machine API key not configured. Please set VITE_SCREENSHOTMACHINE_API_KEY environment variable.</p>';
+        return;
+    }
+
+    const buoyweatherUrl = `https://www.buoyweather.com/forecast/marine-weather/@${KAMSAR_LAT},${KAMSAR_LON}`;
+    const encodedUrl = encodeURIComponent(buoyweatherUrl);
+
+    const screenshotUrl = `https://api.screenshotmachine.com?key=${apiKey}&url=${encodedUrl}&dimension=3000x3000&cookies=access_token%3Deefd5e64292369c3aeb0bc73f9414e6808208c99&selector=.wind-wave&cacheLimit=0`;
+
+    container.innerHTML = `
+        <img
+            src="${screenshotUrl}"
+            alt="Buoyweather Forecast"
+            style="width:100%; height:auto; border-radius:8px; display:block;"
+            onload="this.parentElement.style.background='#ffffff';"
+            onerror="this.parentElement.innerHTML='<p style=\\'color:var(--danger);padding:20px;\\'>Failed to load weather forecast screenshot. Please try again later.</p>';"
+        />
+    `;
 }
 
 function renderHourlyMarineChart(hourly) {
