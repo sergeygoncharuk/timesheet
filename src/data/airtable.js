@@ -348,7 +348,13 @@ export async function fetchTagsFromAirtable() {
     let offset = null;
 
     do {
-        const url = offset ? `${getTagsTableUrl()}?offset=${offset}` : getTagsTableUrl();
+        // Sort by Name field to match Airtable view order
+        const params = new URLSearchParams();
+        params.append('sort[0][field]', 'Name');
+        params.append('sort[0][direction]', 'asc');
+        if (offset) params.append('offset', offset);
+
+        const url = `${getTagsTableUrl()}?${params.toString()}`;
         const res = await fetch(url, { headers: getHeaders() });
         if (!res.ok) {
             const err = await res.json();
