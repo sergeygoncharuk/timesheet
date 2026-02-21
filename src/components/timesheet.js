@@ -319,8 +319,15 @@ export async function renderEntries() {
   const progressLabel = document.getElementById('progressBarLabel');
   progressContainer.style.display = 'flex';
   progressFill.style.width = `${pct}%`;
-  const hrs = Math.floor(totalMinutes / 60);
-  const mins = totalMinutes % 60;
+  let hrs = Math.floor(totalMinutes / 60);
+  let mins = totalMinutes % 60;
+
+  // Round 23h 59m to 24h
+  if (hrs === 23 && mins === 59) {
+    hrs = 24;
+    mins = 0;
+  }
+
   progressLabel.textContent = mins > 0 ? `${hrs}h ${mins}m / 24h` : `${hrs}h / 24h`;
 
   if (inlineDashOpen) renderInlineDashboard();
