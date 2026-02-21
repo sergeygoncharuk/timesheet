@@ -340,6 +340,14 @@ export async function renderEntries() {
     });
   });
   }
+
+  // Edit button click handler
+  tbody.querySelectorAll('.edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openEditForm(btn.dataset.id, entries);
+    });
+  });
+
   tbody.querySelectorAll('.delete').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (btn.classList.contains('confirm-delete')) {
