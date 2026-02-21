@@ -47,10 +47,16 @@ function buildWeatherHTML() {
 
     <div class="chart-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3>Weather Forecast (Today & Tomorrow)</h3>
-          <a href="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View Buoyweather &rarr;</a>
+          <h3>Weather Forecast (Buoyweather)</h3>
+          <a href="https://www.buoyweather.com/forecast/marine-weather/@10.51,-14.91" target="_blank" style="font-size:12px; color:#4285F4; text-decoration:none;">View full forecast &rarr;</a>
       </div>
-      <div id="forecastTable" style="overflow-x:auto;"></div>
+      <div style="width:100%; height:650px; overflow:hidden; border-radius:8px; background:#ffffff; position:relative; border:1px solid #e2e8f0;">
+        <iframe
+          src="https://www.buoyweather.com/forecast/marine-weather/print/charts/@10.51,-14.91"
+          style="width:200%; height:1800px; border:none; transform:scale(0.65) translateX(-27%) translateY(-30%); transform-origin:top left;"
+          title="Buoyweather Forecast"
+        ></iframe>
+      </div>
     </div>
 
     <div class="chart-card">
@@ -99,121 +105,12 @@ async function fetchAndRenderWeather() {
         if (!response.ok) throw new Error('Weather data fetch failed');
         const data = await response.json();
 
-        renderForecastTable(data.hourly);
         renderHourlyMarineChart(data.hourly);
         renderWeeklyWindChart(data.hourly);
     } catch (error) {
         console.error('Failed to load weather data:', error);
         // Fallback or error UI could go here
     }
-}
-
-function renderForecastTable(hourly) {
-    const container = document.getElementById('forecastTable');
-    if (!container) return;
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // Get indices for today and tomorrow (8 periods each: 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, 9pm)
-    const todayData = getDataForDay(hourly, today);
-    const tomorrowData = getDataForDay(hourly, tomorrow);
-
-    if (!todayData.length && !tomorrowData.length) {
-        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No forecast data available</p>';
-        return;
-    }
-
-    container.innerHTML = `
-        <table class="forecast-table">
-            <thead>
-                <tr>
-                    <th rowspan="2" style="border-right:2px solid #e2e8f0;">Time</th>
-                    ${todayData.length ? `<th colspan="8" style="border-right:2px solid #e2e8f0;">${formatDayHeader(today)}</th>` : ''}
-                    ${tomorrowData.length ? `<th colspan="8">${formatDayHeader(tomorrow)}</th>` : ''}
-                </tr>
-                <tr>
-                    ${todayData.map(d => `<th>${d.hour}</th>`).join('')}
-                    ${todayData.length ? '<th style="border-right:2px solid #e2e8f0;width:0;"></th>' : ''}
-                    ${tomorrowData.map(d => `<th>${d.hour}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="label-cell">Wind Speed<br><span style="font-size:11px;color:var(--text-muted);">(knots)</span></td>
-                    ${todayData.map(d => `<td>${renderWindBar(d.windSpeed)}<br>${Math.round(d.windSpeed)}</td>`).join('')}
-                    ${todayData.length ? '<td style="border-right:2px solid #e2e8f0;"></td>' : ''}
-                    ${tomorrowData.map(d => `<td>${renderWindBar(d.windSpeed)}<br>${Math.round(d.windSpeed)}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td class="label-cell">Wind Dir</td>
-                    ${todayData.map(d => `<td>${renderDirection(d.windDir)}</td>`).join('')}
-                    ${todayData.length ? '<td style="border-right:2px solid #e2e8f0;"></td>' : ''}
-                    ${tomorrowData.map(d => `<td>${renderDirection(d.windDir)}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td class="label-cell">Wave Height<br><span style="font-size:11px;color:var(--text-muted);">(meters)</span></td>
-                    ${todayData.map(d => `<td>${renderWaveBar(d.waveHeight)}<br>${d.waveHeight.toFixed(1)}</td>`).join('')}
-                    ${todayData.length ? '<td style="border-right:2px solid #e2e8f0;"></td>' : ''}
-                    ${tomorrowData.map(d => `<td>${renderWaveBar(d.waveHeight)}<br>${d.waveHeight.toFixed(1)}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td class="label-cell">Wave Dir</td>
-                    ${todayData.map(d => `<td>${renderDirection(d.waveDir)}</td>`).join('')}
-                    ${todayData.length ? '<td style="border-right:2px solid #e2e8f0;"></td>' : ''}
-                    ${tomorrowData.map(d => `<td>${renderDirection(d.waveDir)}</td>`).join('')}
-                </tr>
-            </tbody>
-        </table>
-    `;
-}
-
-function getDataForDay(hourly, date) {
-    const data = [];
-    const hours = [0, 3, 6, 9, 12, 15, 18, 21]; // 8 periods per day
-
-    for (let h of hours) {
-        const targetTime = new Date(date);
-        targetTime.setHours(h, 0, 0, 0);
-        const timeStr = targetTime.toISOString().slice(0, 13) + ':00';
-
-        const index = hourly.time.indexOf(timeStr);
-        if (index !== -1) {
-            data.push({
-                hour: h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`,
-                windSpeed: hourly.wind_speed_10m[index] || 0,
-                windDir: hourly.wind_direction_10m[index] || 0,
-                waveHeight: hourly.wave_height[index] || 0,
-                waveDir: hourly.wave_direction[index] || 0
-            });
-        }
-    }
-    return data;
-}
-
-function formatDayHeader(date) {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return `${days[date.getDay()]} ${date.getMonth()+1}/${date.getDate()}`;
-}
-
-function renderWindBar(speed) {
-    const maxHeight = 40;
-    const height = Math.min((speed / 30) * maxHeight, maxHeight);
-    return `<div style="width:30px;height:${maxHeight}px;display:flex;align-items:flex-end;margin:0 auto;"><div style="width:100%;height:${height}px;background:#4A90E2;border-radius:2px;"></div></div>`;
-}
-
-function renderWaveBar(height) {
-    const maxBarHeight = 40;
-    const barHeight = Math.min((height / 3) * maxBarHeight, maxBarHeight);
-    return `<div style="width:30px;height:${maxBarHeight}px;display:flex;align-items:flex-end;margin:0 auto;"><div style="width:100%;height:${barHeight}px;background:#5B9BD5;border-radius:2px;"></div></div>`;
-}
-
-function renderDirection(degrees) {
-    const arrows = ['↓', '↙', '←', '↖', '↑', '↗', '→', '↘'];
-    const index = Math.round(degrees / 45) % 8;
-    return `<span style="font-size:18px;">${arrows[index]}</span>`;
 }
 
 function renderHourlyMarineChart(hourly) {
