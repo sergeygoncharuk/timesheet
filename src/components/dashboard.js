@@ -32,13 +32,12 @@ function buildDashboardHTML() {
     <div class="control-section">
       <div class="control-label">
         Vessel
-        <span class="required-badge">Required</span>
       </div>
       <select class="vessel-select" id="dashVesselSelect"></select>
     </div>
 
     <div class="control-section">
-      <div class="control-label"><span></span><span class="required-badge">Required</span></div>
+      <div class="control-label"><span></span></div>
       <div class="date-buttons">
         <button class="date-btn dash-date-btn ${dashDateOffset === -1 ? 'active' : ''}" data-offset="-1">Yesterday</button>
         <button class="date-btn dash-date-btn ${dashDateOffset === 0 ? 'active' : ''}" data-offset="0">Today</button>
